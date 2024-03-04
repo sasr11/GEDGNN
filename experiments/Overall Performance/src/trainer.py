@@ -33,7 +33,7 @@ class Trainer(object):
         self.results = []
 
         # self.use_gpu = torch.cuda.is_available()
-        self.use_gpu = False
+        self.use_gpu = True
         print("use_gpu =", self.use_gpu)
         self.device = torch.device('cuda') if self.use_gpu else torch.device('cpu')
 
@@ -342,7 +342,7 @@ class Trainer(object):
 
     def create_batches(self):
         """
-        Creating batches from the training graph list.
+        Creating batches from the training graph list. 从训练图列表中创建批次
         :return batches: List of lists with batches.
         """
         random.shuffle(self.training_graphs)
@@ -353,7 +353,7 @@ class Trainer(object):
 
     def pack_graph_pair(self, graph_pair):
         """
-        Prepare the graph pair data for GedGNN model.
+        Prepare the graph pair data for GedGNN model. 为GedGNN模型准备图对数据
         :param graph_pair: (pair_type, id_1, id_2)
         :return new_data: Dictionary of Torch Tensors.
         """
