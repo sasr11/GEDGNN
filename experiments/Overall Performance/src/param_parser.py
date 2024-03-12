@@ -146,7 +146,7 @@ def parameter_parser():
 
     parser.add_argument("--model-epoch-end",
                         type=int,
-                        default=0,
+                        default=2,
                         help="The number of epochs the final saved model has been trained.")
 
     parser.add_argument("--dataset",
@@ -156,7 +156,7 @@ def parameter_parser():
 
     parser.add_argument("--model-name",
                         type=str,
-                        default='GPN',
+                        default='GedGNN',
                         help="model name")
 
     parser.add_argument("--graph-pair-mode",

@@ -14,7 +14,7 @@ from kbest_matching_with_lb import KBestMSolver
 from math import exp
 from scipy.stats import spearmanr, kendalltau
 
-from models import GPN, SimGNN, GedGNN, TaGSim
+from models import GPN, SimGNN, GedGNN, TaGSim, MyGNN
 from GedMatrix import fixed_mapping_loss
 
 
@@ -32,10 +32,10 @@ class Trainer(object):
         self.to_torch_time = 0.0
         self.results = []
 
-        # self.use_gpu = torch.cuda.is_available()
-        self.use_gpu = True
+        self.use_gpu = torch.cuda.is_available()
+        # self.use_gpu = False
         print("use_gpu =", self.use_gpu)
-        self.device = torch.device('cuda') if self.use_gpu else torch.device('cpu')
+        self.device = torch.device('cuda:0') if self.use_gpu else torch.device('cpu')
 
         self.load_data()
         self.transfer_data_to_torch()
@@ -66,6 +66,13 @@ class Trainer(object):
         elif self.args.model_name == "TaGSim":
             self.args.target_mode = 'exp'
             self.model = TaGSim(self.args, self.number_of_labels).to(self.device)
+        elif self.args.model_name == "MyGNN":
+            if self.args.dataset in ["AIDS", "Linux"]:
+                self.args.loss_weight = 10.0
+            else:
+                self.args.loss_weight = 1.0
+            self.args.gtmap = True
+            self.model = MyGNN(self.args, self.number_of_labels).to(self.device)
         else:
             assert False
 
@@ -87,7 +94,7 @@ class Trainer(object):
                 # self.values.append((target - prediction).item())
         elif self.args.model_name == "GedGNN":
             weight = self.args.loss_weight
-            for graph_pair in batch:
+            for graph_pair in batch:  # 遍历一个批次内所有的图对
                 data = self.pack_graph_pair(graph_pair)
                 target, gt_mapping = data["target"], data["mapping"]
                 prediction, _, mapping = self.model(data)
@@ -103,12 +110,49 @@ class Trainer(object):
                 ta_ged = data["ta_ged"]
                 prediction, _ = self.model(data)
                 losses = losses + torch.nn.functional.mse_loss(ta_ged, prediction)
+        elif self.args.model_name == "MyGNN":
+            weight = self.args.loss_weight
+            for graph_pair in batch:
+                data = self.pack_graph_pair(graph_pair)
+                target, gt_mapping = data["target"], data["mapping"]
+                prediction, _, mapping, masked_index = self.model(data)
+                mapping = self.my_mask(masked_index, mapping)  # my
+                losses = losses + fixed_mapping_loss(mapping, gt_mapping) + weight * F.mse_loss(target, prediction)
+                if self.args.finetune:
+                    if self.args.target_mode == "linear":
+                        losses = losses + F.relu(target - prediction)
+                    else: # "exp"
+                        losses = losses + F.relu(prediction - target)
         else:
             assert False
 
         losses.backward()
         self.optimizer.step()
         return losses.item()
+
+    def my_mask(self, masked_index, mapping):
+        """
+        :param masked_index: 要遮蔽的行或列索引 1*n
+        :param pre_mapping: 要进行遮蔽的矩阵 
+        :return mapping: 遮蔽后的矩阵
+        """ 
+        if masked_index == None: return mapping
+        rows, cols = mapping.shape[:2]
+        num = masked_index.numel()
+        if rows < cols:  # G1节点数小于G2节点数
+            if (num == cols):  # 判断节点索引与节点数相同
+                masked_index = masked_index.view(1, num)  # 使张量形状变为1*num
+                mask = masked_index == 0  # 将索引张量转换为布尔张量
+                mapping[mask.expand_as(mapping)] = 0  # expand_as将mask拓展与pre_mapping一样的形状
+                return mapping
+            else: assert False
+        elif rows > cols:  # G1节点数大于G2节点数
+            if (num == rows):  # 判断节点索引与节点数相同
+                masked_index = masked_index.view(num, 1)  # 使张量形状变为num*1
+                mask = masked_index == 0  # 将索引张量转换为布尔张量
+                mapping[mask.expand_as(mapping)] = 0  # expand_as将mask拓展与pre_mapping一样的形状
+                return mapping
+            else: assert False
 
     def load_data(self):
         """
@@ -168,7 +212,7 @@ class Trainer(object):
         self.gid = gid
         self.gn = [g['n'] for g in self.graphs]
         self.gm = [g['m'] for g in self.graphs]
-        for i in range(n):
+        for i in range(n):  # 遍历每张图
             mapping[i][i] = torch.eye(self.gn[i], dtype=torch.float, device=self.device)
             for j in range(i + 1, n):
                 id_pair = (gid[i], gid[j])
@@ -182,7 +226,7 @@ class Trainer(object):
                 else:
                     ta_ged, gt_mappings = self.ged_dict[id_pair]
                     ged[i][j] = ged[j][i] = ta_ged
-                    mapping_list = [[0 for y in range(n2)] for x in range(n1)]
+                    mapping_list = [[0 for y in range(n2)] for x in range(n1)]  # 初始化大小为n1*n2的矩阵
                     for gt_mapping in gt_mappings:
                         for x, y in enumerate(gt_mapping):
                             mapping_list[x][y] = 1
@@ -291,7 +335,7 @@ class Trainer(object):
         assert self.args.graph_pair_mode == "combine"
         dg = self.delta_graphs
         for i in range(train_num):
-            if self.gn[i] <= 10:
+            if self.gn[i] <= 10:  
                 for j in range(i, train_num):
                     tmp = self.check_pair(i, j)
                     if tmp is not None:
@@ -416,9 +460,9 @@ class Trainer(object):
 
         return new_data
 
-    def fit(self):
+    def fit(self): 
         """
-        Fitting a model.
+        拟合模型（训练）
         """
         print("\nModel training.\n")
         t1 = time.time()
@@ -430,7 +474,7 @@ class Trainer(object):
         self.values = []
         with tqdm(total=self.args.epochs * len(self.training_graphs), unit="graph_pairs", leave=True, desc="Epoch",
                   file=sys.stdout) as pbar:
-            for epoch in range(self.args.epochs):
+            for epoch in range(self.args.epochs):  # 这里只循环一次（self.args.epochs=1），真正的epoch循环在main函数里
                 batches = self.create_batches()
                 loss_sum = 0
                 main_index = 0
@@ -455,14 +499,17 @@ class Trainer(object):
             ('model_name', 'dataset', 'graph_set', "current_epoch", "training_time(s/epoch)", "training_loss(1000x)"))
         self.results.append(
             (self.args.model_name, self.args.dataset, "train", self.cur_epoch + 1, training_time, training_loss))
+        format_str = "{:<15}{:<10}{:<12}{:<18}{:<25}{:<10}"
 
-        print(*self.results[-2], sep='\t')
-        print(*self.results[-1], sep='\t')
+        # print(*self.results[-2], sep='\t')
+        # print(*self.results[-1], sep='\t')
+        print(format_str.format(*self.results[-2]))
+        print(format_str.format(*self.results[-1]))
         with open(self.args.abs_path + self.args.result_path + 'results.txt', 'a') as f:
             print("## Training", file=f)
             print("```", file=f)
-            print(*self.results[-2], sep='\t', file=f)
-            print(*self.results[-1], sep='\t', file=f)
+            print(format_str.format(*self.results[-2]), file=f)
+            print(format_str.format(*self.results[-1]), file=f)
             print("```\n", file=f)
 
     @staticmethod
@@ -555,17 +602,19 @@ class Trainer(object):
                              'fea', 'rho', 'tau', 'pk10', 'pk20'))
         self.results.append((self.args.model_name, self.args.dataset, testing_graph_set, num, time_usage, mse, mae, acc,
                              fea, rho, tau, pk10, pk20))
-
-        print(*self.results[-2], sep='\t')
-        print(*self.results[-1], sep='\t')
+        format_str = "{:<15}{:<10}{:<12}{:<18}{:<20}{:<10}{:<10}{:<10}{:<10}{:<10}{:<10}{:<10}{:<10}"
+        # print(*self.results[-2], sep='\t')
+        # print(*self.results[-1], sep='\t')
+        print(format_str.format(*self.results[-2]))
+        print(format_str.format(*self.results[-1]))
         with open(self.args.abs_path + self.args.result_path + 'results.txt', 'a') as f:
             if test_k == 0:
                 print("## Testing", file=f)
             else:
                 print("## Post-processing", file=f)
             print("```", file=f)
-            print(*self.results[-2], sep='\t', file=f)
-            print(*self.results[-1], sep='\t', file=f)
+            print(format_str.format(*self.results[-2]), file=f)
+            print(format_str.format(*self.results[-1]), file=f)
             print("```\n", file=f)
 
     def batch_score(self, testing_graph_set='test', test_k=100):

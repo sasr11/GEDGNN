@@ -37,10 +37,10 @@ class AttentionModule(torch.nn.Module):
         :param embedding: Result of the GCN.
         :return representation: A graph level representation vector.
         """
-        global_context = torch.mean(torch.matmul(embedding, self.weight_matrix), dim=0)
-        transformed_global = torch.tanh(global_context)
-        sigmoid_scores = torch.sigmoid(torch.mm(embedding, transformed_global.view(-1, 1)))
-        representation = torch.mm(torch.t(embedding), sigmoid_scores)
+        global_context = torch.mean(torch.matmul(embedding, self.weight_matrix), dim=0)  # 1*filters_3
+        transformed_global = torch.tanh(global_context)  # 1*filters_3
+        sigmoid_scores = torch.sigmoid(torch.mm(embedding, transformed_global.view(-1, 1)))  # n*1
+        representation = torch.mm(torch.t(embedding), sigmoid_scores)  # filters_3*1
         return representation
 
 
@@ -206,6 +206,16 @@ def gumbel_softmax(logits, temperature=1, hard=True):
 
     # Set gradients w.r.t. y_hard gradients w.r.t. y
     y_hard = (y_hard - y).detach() + y
+    return y_hard
+
+def my_gumbel_softmax(logits, n, temperature=1):
+    y = gumbel_softmax_sample(logits, temperature)  # 先调用gumbel_softmax_sample来获取软采样结果
+
+    _, ind = torch.topk(y, n)  # 选出top-n
+    y_hard = torch.zeros_like(y)  # 初始化一个与y同形状的全0张量
+    y_hard.scatter_(0, ind, 1)  # 根据索引填充
+    y_hard = (y_hard - y).detach() + y  # 设置关于y_hard和y的梯度
+    
     return y_hard
 
 '''

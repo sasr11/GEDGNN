@@ -17,10 +17,10 @@ def main():
     if args.model_train == 1:
         for epoch in range(args.model_epoch_start, args.model_epoch_end):
             trainer.cur_epoch = epoch
-            trainer.fit()
+            trainer.fit()  # 训练
             trainer.save(epoch + 1)
             #trainer.score('val')
-            trainer.score('test')
+            trainer.score('test')  # 测试
             #if not args.demo:
              #   trainer.score('test2')
     else:

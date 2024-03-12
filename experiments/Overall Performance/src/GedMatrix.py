@@ -128,16 +128,18 @@ def fixed_mapping_loss(mapping, gt_mapping):
     if epoch_percent >= 1.0:
         return mapping_loss(mapping, gt_mapping)
 
-    num_1 = gt_mapping.sum().item()
-    num_0 = n1 * n2 - num_1
+    num_1 = gt_mapping.sum().item()  # 计算正样本（值为1）的数量
+    num_0 = n1 * n2 - num_1  # 负样本
     if num_1 >= num_0: # There is no need to use mask. Directly return the complete loss.
         return mapping_loss(mapping, gt_mapping)
 
     p_base = num_1 / num_0
     p = 1.0 - (p_base + epoch_percent * (1-p_base))
 
+    d = torch.device('cuda:0')
+    x = torch.rand([n1, n2]).to(d)
     #p = 1.0 - (epoch_num + 1.0) / 10
-    mask = (torch.rand([n1, n2]) + gt_mapping) > p
+    mask = (x + gt_mapping) > p
     return mapping_loss(mapping[mask], gt_mapping[mask])
 
 def fixed_mapping_loss1(mapping, gt_mapping):
