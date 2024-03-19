@@ -184,6 +184,7 @@ def sample_gumbel(shape, eps=1e-20):
     return -torch.log(-torch.log(U + eps) + eps)
 
 def gumbel_softmax_sample(logits, temperature=1):
+    # d = torch.device('cuda:0')
     y = logits + sample_gumbel(logits.shape)
     return F.softmax(y / temperature, dim=-1)
 

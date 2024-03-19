@@ -6,6 +6,7 @@ import dgl
 import torch
 import torch.nn.functional as F
 import random
+from datetime import datetime
 import numpy as np
 from tqdm import tqdm
 from utils import load_all_graphs, load_labels, load_ged
@@ -31,9 +32,11 @@ class Trainer(object):
         self.load_data_time = 0.0
         self.to_torch_time = 0.0
         self.results = []
+        self.result_filename = args.model_name + '_' + args.dataset + '_' + datetime.now().strftime('%y-%m%d-%H%M') + '.txt'
+        print("result_filename =", self.result_filename)
 
-        self.use_gpu = torch.cuda.is_available()
-        # self.use_gpu = False
+        # self.use_gpu = torch.cuda.is_available()
+        self.use_gpu = False
         print("use_gpu =", self.use_gpu)
         self.device = torch.device('cuda:0') if self.use_gpu else torch.device('cpu')
 
@@ -116,8 +119,9 @@ class Trainer(object):
                 data = self.pack_graph_pair(graph_pair)
                 target, gt_mapping = data["target"], data["mapping"]
                 prediction, _, mapping, masked_index = self.model(data)
-                mapping = self.my_mask(masked_index, mapping)  # my
-                losses = losses + fixed_mapping_loss(mapping, gt_mapping) + weight * F.mse_loss(target, prediction)
+                mapping = self.my_alignment(masked_index, mapping)  # my
+                BCE_loss = fixed_mapping_loss(mapping, gt_mapping)
+                losses = losses + BCE_loss + weight * F.mse_loss(target, prediction)
                 if self.args.finetune:
                     if self.args.target_mode == "linear":
                         losses = losses + F.relu(target - prediction)
@@ -132,6 +136,7 @@ class Trainer(object):
 
     def my_mask(self, masked_index, mapping):
         """
+        根据masked_index遮蔽mapping中的行或列
         :param masked_index: 要遮蔽的行或列索引 1*n
         :param pre_mapping: 要进行遮蔽的矩阵 
         :return mapping: 遮蔽后的矩阵
@@ -153,6 +158,32 @@ class Trainer(object):
                 mapping[mask.expand_as(mapping)] = 0  # expand_as将mask拓展与pre_mapping一样的形状
                 return mapping
             else: assert False
+    
+    def my_alignment(self, masked_index, mapping):
+        """
+        根据masked_index遮蔽mapping中的行或列后, 对剩余节点进行对齐(变成0-1矩阵)
+        :param masked_index: 要遮蔽的行或列索引 1*n
+        :param pre_mapping: 要进行对齐的矩阵 
+        :return mapping: 对齐后的矩阵
+        """ 
+        mapping = self.my_mask(masked_index, mapping)
+        n, m = mapping.shape
+        x = min(n, m)
+        aligment_index = []
+        for _ in range(x):
+            # 找到最大元素的索引
+            max_index = torch.argmax(mapping)
+            max_row = max_index // m
+            max_col = max_index % m
+            aligment_index.append([max_row, max_col])
+            # 设置最大元素所在行列的值为-1
+            mapping[max_row, :] = -1
+            mapping[:, max_col] = -1
+        
+        mapping.zero_()
+        for index in aligment_index:
+            mapping[index[0]][index[1]] = 1
+        return mapping
 
     def load_data(self):
         """
@@ -161,6 +192,7 @@ class Trainer(object):
         """
         t1 = time.time()
         dataset_name = self.args.dataset
+        # 训练集中图的数量、验证集图数量、测试集图数量、所有图的集合
         self.train_num, self.val_num, self.test_num, self.graphs = load_all_graphs(self.args.abs_path, dataset_name)
         print("Load {} graphs. ({} for training)".format(len(self.graphs), self.train_num))
 
@@ -206,13 +238,14 @@ class Trainer(object):
         print("Feature shape of 1st graph:", self.features[0].shape)
 
         n = len(self.graphs)
-        mapping = [[None for i in range(n)] for j in range(n)]
+        mapping = [[None for i in range(n)] for j in range(n)]  # mapping[i][j]表示图i和图j的匹配矩阵
         ged = [[(0., 0., 0., 0.) for i in range(n)] for j in range(n)]
         gid = [g['gid'] for g in self.graphs]
         self.gid = gid
         self.gn = [g['n'] for g in self.graphs]
         self.gm = [g['m'] for g in self.graphs]
-        for i in range(n):  # 遍历每张图
+        # 遍历所有可能的图对
+        for i in range(n):
             mapping[i][i] = torch.eye(self.gn[i], dtype=torch.float, device=self.device)
             for j in range(i + 1, n):
                 id_pair = (gid[i], gid[j])
@@ -306,7 +339,7 @@ class Trainer(object):
     def check_pair(self, i, j):
         if i == j:
             return (0, i, j)
-        id1, id2 = self.gid[i], self.gid[j]
+        id1, id2 = self.gid[i], self.gid[j]  # 找到第i和j张图的id
         if (id1, id2) in self.ged_dict:
             return (0, i, j)
         elif (id2, id1) in self.ged_dict:
@@ -325,20 +358,20 @@ class Trainer(object):
         train_num = self.train_num
         val_num = train_num + self.val_num
         test_num = len(self.graphs)
-
+        """如果是demo测试"""
         if self.args.demo:
             train_num = 30
             val_num = 40
             test_num = 50
             self.args.epochs = 1
-
+        """生成训练图对"""
         assert self.args.graph_pair_mode == "combine"
         dg = self.delta_graphs
-        for i in range(train_num):
-            if self.gn[i] <= 10:  
+        for i in range(train_num):  # 遍历所有训练集中的图
+            if self.gn[i] <= 10:  # 如果是小图
                 for j in range(i, train_num):
                     tmp = self.check_pair(i, j)
-                    if tmp is not None:
+                    if tmp is not None:  # 如果是同一张图或图对存在
                         self.training_graphs.append(tmp)
             elif dg[i] is not None:
                 k = len(dg[i])
@@ -349,7 +382,8 @@ class Trainer(object):
         for i in range(train_num):
             if self.gn[i] <= 10:
                 li.append(i)
-
+        
+        """生成验证图对"""
         for i in range(train_num, val_num):
             if self.gn[i] <= 10:
                 random.shuffle(li)
@@ -365,7 +399,8 @@ class Trainer(object):
             elif dg[i] is not None:
                 k = len(dg[i])
                 self.testing_graphs.append((1, i, list(range(k))))
-
+                
+        """生成测试图对"""
         li = []
         for i in range(val_num, test_num):
             if self.gn[i] <= 10:
@@ -505,7 +540,7 @@ class Trainer(object):
         # print(*self.results[-1], sep='\t')
         print(format_str.format(*self.results[-2]))
         print(format_str.format(*self.results[-1]))
-        with open(self.args.abs_path + self.args.result_path + 'results.txt', 'a') as f:
+        with open(self.args.abs_path + self.args.result_path + self.result_filename, 'a') as f:
             print("## Training", file=f)
             print("```", file=f)
             print(format_str.format(*self.results[-2]), file=f)
@@ -607,7 +642,7 @@ class Trainer(object):
         # print(*self.results[-1], sep='\t')
         print(format_str.format(*self.results[-2]))
         print(format_str.format(*self.results[-1]))
-        with open(self.args.abs_path + self.args.result_path + 'results.txt', 'a') as f:
+        with open(self.args.abs_path + self.args.result_path + self.result_filename, 'a') as f:
             if test_k == 0:
                 print("## Testing", file=f)
             else:
@@ -694,14 +729,14 @@ class Trainer(object):
                                  fea, rho, tau, pk10, pk20))
 
             print(*self.results[-1], sep='\t')
-            with open(self.args.abs_path + self.args.result_path + 'results.txt', 'a') as f:
+            with open(self.args.abs_path + self.args.result_path + self.result_filename, 'a') as f:
                 print(*self.results[-1], sep='\t', file=f)
 
     def print_results(self):
         for r in self.results:
             print(*r, sep='\t')
 
-        with open(self.args.abs_path + self.args.result_path + 'results.txt', 'a') as f:
+        with open(self.args.abs_path + self.args.result_path + self.result_filename, 'a') as f:
             for r in self.results:
                 print(*r, sep='\t', file=f)
 

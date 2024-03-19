@@ -136,8 +136,8 @@ def fixed_mapping_loss(mapping, gt_mapping):
     p_base = num_1 / num_0
     p = 1.0 - (p_base + epoch_percent * (1-p_base))
 
-    d = torch.device('cuda:0')
-    x = torch.rand([n1, n2]).to(d)
+    # d = torch.device('cuda:0')
+    x = torch.rand([n1, n2])
     #p = 1.0 - (epoch_num + 1.0) / 10
     mask = (x + gt_mapping) > p
     return mapping_loss(mapping[mask], gt_mapping[mask])

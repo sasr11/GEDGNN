@@ -1,13 +1,17 @@
-gt mapping很奇怪？？？
+问题：
+1、gt mapping很奇怪？？？不是一一对应的
+2、图对的生成init_graph_pairs中"Generate 140 * 100 val graph pairs"是怎么回事
+3、大图（n>10）的处理   delta graph
 ============================================================
 接下来的工作：
-1、删点 
-2、损失函数
+1、根据每个图对的ged值单独统计其loss，看看在不同ged值下的图对的损失函数
+2、如何分析通过mlp计算出来的节点保留概率的有效性
 ============================================================
 如果要使用gpu
 trainer.py 第36行参数self.use_gpu改为True
             第38行设备选择看具体空闲GPU
 GedMatrix.py 第140行的x加上.to(d)
+layers.py 第187
 
 ==============================================================
 1、模型的定义
@@ -29,11 +33,10 @@ main()
         - load_data()  # 加载数据(训练集和测试集数据)
             * self.graphs = list[
                 # 训练集
-                dict{"n"=节点数,"m"=边数,"labels"=[每个点的标签],"graph"=[节点对]}
+                dict{"gid"=图id,"n"=节点数,"m"=边数,"labels"=[每个点的标签],"graph"=[节点对]}
                 ...
                 # 测试集
-                ...
-            ]
+                ...]
             * self.features 为节点one-hot向量
             * self.ged_dict = (id1，id2):((ged_value, ged_nc, ged_in, ged_ie),[best_node_mapping])
             * 例：(0,1):((3,1,1,0,1),[((0,1),(1,0),(2,1))])
@@ -46,13 +49,16 @@ main()
                                  1,0,0,
                                  0,0,1]
         - init_graph_pairs()  # 构建训练图对集合
+            * self.training_graphs  # 训练图对集合（包含自己与自己的图对）
+            * self.val_graphs  # 验证图对集合
+            * self.testing_graphs   # 测试图对集合
         - setup_model()  # 根据模型名称设置模型
     for epoch in (start, end):  # 模型训练轮次
         -train.fit()  # 训练
             for batch in all_batches:  # 迭代训练所有batch
                 - train.process_batch()
                     for graph_pair in batch:  # 遍历一个批次内所有的图对
-                        - pack_graph_pair()  # 为模型准备图对数据
+                        - pack_graph_pair()  # 为模型准备图对的各种信息
                             * data = dict{
                                 "id_1": , "id_2": , 
                                 "edge_index_1: 图1邻接矩阵, "edge_index_2: 图2邻接矩阵,
