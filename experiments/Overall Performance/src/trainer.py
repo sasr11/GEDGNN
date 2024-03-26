@@ -32,8 +32,16 @@ class Trainer(object):
         self.load_data_time = 0.0
         self.to_torch_time = 0.0
         self.results = []
-        self.result_filename = args.model_name + '_' + args.dataset + '_' + datetime.now().strftime('%y-%m%d-%H%M') + '.txt'
-        print("result_filename =", self.result_filename)
+        
+        # my
+        now = datetime.now().strftime('%y%m%d%H%M')
+        self.result_filename = 'result' + '_' + args.model_name + '_' + args.dataset + '_' + now + '.txt'
+        self.match_result = 'match' + '_' + args.model_name + '_' + args.dataset + '_' + now + '.txt'
+        # self.sample_store = 'sample' + '_' + args.model_name + '_' + args.dataset + '_' + now + '.txt'
+        print("result_filename =", self.result_filename)  # 存放训练结果和测试结果
+        print("match_result =", self.match_result)  # 存放每个图对的一对一匹配结果
+        # print("sample_store =", self.sample_store)  # 存放每个batch第一个图对的预测对齐结果和真实对齐结果
+        
 
         # self.use_gpu = torch.cuda.is_available()
         self.use_gpu = False
@@ -115,18 +123,26 @@ class Trainer(object):
                 losses = losses + torch.nn.functional.mse_loss(ta_ged, prediction)
         elif self.args.model_name == "MyGNN":
             weight = self.args.loss_weight
+            # flag = True
             for graph_pair in batch:
                 data = self.pack_graph_pair(graph_pair)
                 target, gt_mapping = data["target"], data["mapping"]
                 prediction, _, mapping, masked_index = self.model(data)
                 mapping = self.my_alignment(masked_index, mapping)  # my
                 BCE_loss = fixed_mapping_loss(mapping, gt_mapping)
+                # BCE_weight = 0.2 + self.cur_epoch*0.04
                 losses = losses + BCE_loss + weight * F.mse_loss(target, prediction)
                 if self.args.finetune:
                     if self.args.target_mode == "linear":
                         losses = losses + F.relu(target - prediction)
                     else: # "exp"
                         losses = losses + F.relu(prediction - target)
+                # if flag:
+                #     flag = False
+                #     with open(self.args.abs_path + self.args.result_path + self.sample_store, 'a') as f:
+                #         print(mapping, file=f)
+                #         print(gt_mapping, file=f)
+                #         print("----------------------------------------------------\n", file=f)
         else:
             assert False
 
@@ -185,6 +201,12 @@ class Trainer(object):
             mapping[index[0]][index[1]] = 1
         return mapping
 
+    def my_match(self, mapping, gt_mapping):
+        sum = 0
+        for i, j in zip(mapping.reshape(-1), gt_mapping.reshape(-1)):
+            if(i==1 and j==1): sum = sum + 1
+        return sum
+                
     def load_data(self):
         """
         Load graphs, ged and labels if needed.
@@ -530,14 +552,12 @@ class Trainer(object):
         if len(self.values) > 0:
             self.prediction_analysis(self.values, "training_score")
 
+        # 存储结果
         self.results.append(
             ('model_name', 'dataset', 'graph_set', "current_epoch", "training_time(s/epoch)", "training_loss(1000x)"))
         self.results.append(
             (self.args.model_name, self.args.dataset, "train", self.cur_epoch + 1, training_time, training_loss))
         format_str = "{:<15}{:<10}{:<12}{:<18}{:<25}{:<10}"
-
-        # print(*self.results[-2], sep='\t')
-        # print(*self.results[-1], sep='\t')
         print(format_str.format(*self.results[-2]))
         print(format_str.format(*self.results[-1]))
         with open(self.args.abs_path + self.args.result_path + self.result_filename, 'a') as f:
@@ -588,6 +608,7 @@ class Trainer(object):
         tau = []
         pk10 = []
         pk20 = []
+        matching_list = []
 
         for pair_type, i, j_list in tqdm(testing_graphs, file=sys.stdout):
             pre = []
@@ -597,7 +618,7 @@ class Trainer(object):
                 data = self.pack_graph_pair((pair_type, i, j))
                 target, gt_ged = data["target"].item(), data["ged"]
                 model_out = self.model(data) if test_k == 0 else self.test_matching(data, test_k)
-                prediction, pre_ged = model_out[0], model_out[1]
+                prediction, pre_ged, mapping, masked_index = model_out
                 round_pre_ged = round(pre_ged)
 
                 num += 1
@@ -616,6 +637,12 @@ class Trainer(object):
                     num_fea += 1
                 elif round_pre_ged > gt_ged:
                     num_fea += 1
+                
+                # my
+                mapping = self.my_alignment(masked_index, mapping)
+                sum = self.my_match(mapping, data["mapping"])
+                matching_list.append((data["id_1"], data["id_2"], data["n1"], gt_ged, data["n2"], sum))
+                
             t2 = time.time()
             time_usage.append(t2 - t1)
             rho.append(spearmanr(pre, gt)[0])
@@ -633,13 +660,19 @@ class Trainer(object):
         pk10 = round(np.mean(pk10), 3)
         pk20 = round(np.mean(pk20), 3)
 
+        # my
+        format_str = "{:<10}{:<10}{:<10}{:<10}{:<10}{:<10}"
+        with open(self.args.abs_path + self.args.result_path + self.match_result, 'a') as f:
+            for i in matching_list:
+                print(format_str.format(*i), file=f)
+        
+        # 输出结果
         self.results.append(('model_name', 'dataset', 'graph_set', '#testing_pairs', 'time_usage(s/100p)', 'mse', 'mae', 'acc',
                              'fea', 'rho', 'tau', 'pk10', 'pk20'))
         self.results.append((self.args.model_name, self.args.dataset, testing_graph_set, num, time_usage, mse, mae, acc,
                              fea, rho, tau, pk10, pk20))
         format_str = "{:<15}{:<10}{:<12}{:<18}{:<20}{:<10}{:<10}{:<10}{:<10}{:<10}{:<10}{:<10}{:<10}"
-        # print(*self.results[-2], sep='\t')
-        # print(*self.results[-1], sep='\t')
+        
         print(format_str.format(*self.results[-2]))
         print(format_str.format(*self.results[-1]))
         with open(self.args.abs_path + self.args.result_path + self.result_filename, 'a') as f:
