@@ -10,12 +10,13 @@ from datetime import datetime
 import numpy as np
 from tqdm import tqdm
 from utils import load_all_graphs, load_labels, load_ged
+from my_utils import *
 import matplotlib.pyplot as plt
 from kbest_matching_with_lb import KBestMSolver
 from math import exp
 from scipy.stats import spearmanr, kendalltau
 
-from models import GPN, SimGNN, GedGNN, TaGSim, MyGNN
+from models import GPN, SimGNN, GedGNN, TaGSim, MyGNN, MyGNN2
 from GedMatrix import fixed_mapping_loss
 
 
@@ -36,10 +37,10 @@ class Trainer(object):
         # my
         now = datetime.now().strftime('%y%m%d%H%M')
         self.result_filename = 'result' + '_' + args.model_name + '_' + args.dataset + '_' + now + '.txt'
-        self.match_result = 'match' + '_' + args.model_name + '_' + args.dataset + '_' + now + '.txt'
+        # self.match_result = 'match' + '_' + args.model_name + '_' + args.dataset + '_' + now + '.txt'
         # self.sample_store = 'sample' + '_' + args.model_name + '_' + args.dataset + '_' + now + '.txt'
         print("result_filename =", self.result_filename)  # 存放训练结果和测试结果
-        print("match_result =", self.match_result)  # 存放每个图对的一对一匹配结果
+        # print("match_result =", self.match_result)  # 存放每个图对的一对一匹配结果
         # print("sample_store =", self.sample_store)  # 存放每个batch第一个图对的预测对齐结果和真实对齐结果
         
 
@@ -84,6 +85,13 @@ class Trainer(object):
                 self.args.loss_weight = 1.0
             self.args.gtmap = True
             self.model = MyGNN(self.args, self.number_of_labels).to(self.device)
+        elif self.args.model_name == "MyGNN2":
+            if self.args.dataset in ["AIDS", "Linux"]:
+                self.args.loss_weight = 10.0
+            else:
+                self.args.loss_weight = 1.0
+            self.args.gtmap = True
+            self.model = MyGNN2(self.args, self.number_of_labels).to(self.device)
         else:
             assert False
 
@@ -109,7 +117,8 @@ class Trainer(object):
                 data = self.pack_graph_pair(graph_pair)
                 target, gt_mapping = data["target"], data["mapping"]
                 prediction, _, mapping = self.model(data)
-                losses = losses + fixed_mapping_loss(mapping, gt_mapping) + weight * F.mse_loss(target, prediction)
+                # losses = losses + fixed_mapping_loss(mapping, gt_mapping) + weight * F.mse_loss(target, prediction)
+                losses = losses + weight * F.mse_loss(target, prediction)
                 if self.args.finetune:
                     if self.args.target_mode == "linear":
                         losses = losses + F.relu(target - prediction)
@@ -128,84 +137,41 @@ class Trainer(object):
                 data = self.pack_graph_pair(graph_pair)
                 target, gt_mapping = data["target"], data["mapping"]
                 prediction, _, mapping, masked_index = self.model(data)
-                mapping = self.my_alignment(masked_index, mapping)  # my
+                mapping = my_alignment(masked_index, mapping)
+                # 有BCE Loss
                 BCE_loss = fixed_mapping_loss(mapping, gt_mapping)
-                # BCE_weight = 0.2 + self.cur_epoch*0.04
                 losses = losses + BCE_loss + weight * F.mse_loss(target, prediction)
                 if self.args.finetune:
                     if self.args.target_mode == "linear":
                         losses = losses + F.relu(target - prediction)
                     else: # "exp"
                         losses = losses + F.relu(prediction - target)
+                # 输出每个batch的第一个mapping和gt_mapping
                 # if flag:
                 #     flag = False
                 #     with open(self.args.abs_path + self.args.result_path + self.sample_store, 'a') as f:
                 #         print(mapping, file=f)
                 #         print(gt_mapping, file=f)
                 #         print("----------------------------------------------------\n", file=f)
+        elif self.args.model_name == "MyGNN2":
+            weight = self.args.loss_weight
+            # flag = True
+            for graph_pair in batch:
+                data = self.pack_graph_pair(graph_pair)
+                target, gt_mapping = data["target"], data["mapping"]
+                prediction, _, mapping = self.model(data)
+                losses = losses + weight * F.mse_loss(target, prediction)
+                if self.args.finetune:
+                    if self.args.target_mode == "linear":
+                        losses = losses + F.relu(target - prediction)
+                    else: # "exp"
+                        losses = losses + F.relu(prediction - target)
         else:
             assert False
 
         losses.backward()
         self.optimizer.step()
         return losses.item()
-
-    def my_mask(self, masked_index, mapping):
-        """
-        根据masked_index遮蔽mapping中的行或列
-        :param masked_index: 要遮蔽的行或列索引 1*n
-        :param pre_mapping: 要进行遮蔽的矩阵 
-        :return mapping: 遮蔽后的矩阵
-        """ 
-        if masked_index == None: return mapping
-        rows, cols = mapping.shape[:2]
-        num = masked_index.numel()
-        if rows < cols:  # G1节点数小于G2节点数
-            if (num == cols):  # 判断节点索引与节点数相同
-                masked_index = masked_index.view(1, num)  # 使张量形状变为1*num
-                mask = masked_index == 0  # 将索引张量转换为布尔张量
-                mapping[mask.expand_as(mapping)] = 0  # expand_as将mask拓展与pre_mapping一样的形状
-                return mapping
-            else: assert False
-        elif rows > cols:  # G1节点数大于G2节点数
-            if (num == rows):  # 判断节点索引与节点数相同
-                masked_index = masked_index.view(num, 1)  # 使张量形状变为num*1
-                mask = masked_index == 0  # 将索引张量转换为布尔张量
-                mapping[mask.expand_as(mapping)] = 0  # expand_as将mask拓展与pre_mapping一样的形状
-                return mapping
-            else: assert False
-    
-    def my_alignment(self, masked_index, mapping):
-        """
-        根据masked_index遮蔽mapping中的行或列后, 对剩余节点进行对齐(变成0-1矩阵)
-        :param masked_index: 要遮蔽的行或列索引 1*n
-        :param pre_mapping: 要进行对齐的矩阵 
-        :return mapping: 对齐后的矩阵
-        """ 
-        mapping = self.my_mask(masked_index, mapping)
-        n, m = mapping.shape
-        x = min(n, m)
-        aligment_index = []
-        for _ in range(x):
-            # 找到最大元素的索引
-            max_index = torch.argmax(mapping)
-            max_row = max_index // m
-            max_col = max_index % m
-            aligment_index.append([max_row, max_col])
-            # 设置最大元素所在行列的值为-1
-            mapping[max_row, :] = -1
-            mapping[:, max_col] = -1
-        
-        mapping.zero_()
-        for index in aligment_index:
-            mapping[index[0]][index[1]] = 1
-        return mapping
-
-    def my_match(self, mapping, gt_mapping):
-        sum = 0
-        for i, j in zip(mapping.reshape(-1), gt_mapping.reshape(-1)):
-            if(i==1 and j==1): sum = sum + 1
-        return sum
                 
     def load_data(self):
         """
@@ -514,7 +480,22 @@ class Trainer(object):
             new_data["ta_ged"] = (torch.tensor(ta_ged).float() / higher_bound).to(self.device)
         else:
             assert False
-
+            
+        # # my, 生成边图信息
+        # new_data["lg_edge_index_1"], new_data["lg_features_1"], new_data["lg_n1"] = \
+        #                         my_lineGraph(new_data["edge_index_1"], new_data["features_1"])
+        # new_data["lg_edge_index_2"], new_data["lg_features_2"], new_data["lg_n2"] = \
+        #                         my_lineGraph(new_data["edge_index_2"], new_data["features_2"])
+        # # my, 对节点数和边数较小图进行填充
+        # print("pre: ", new_data["features_1"].shape, new_data["features_2"].shape)
+        # if new_data["n1"] != new_data["n2"]: 
+        #     new_data["features_1"], new_data["features_2"], new_data["n1"], new_data["n2"] = \
+        #         my_pad_features(new_data["features_1"], new_data["features_2"], new_data["n1"], new_data["n2"])
+        # print("post: ", new_data["features_1"].shape, new_data["features_2"].shape)
+        # if new_data["lg_n1"] != new_data["lg_n2"]: 
+        #     new_data["lg_features_1"], new_data["lg_features_2"], new_data["lg_n1"], new_data["lg_n2"] = \
+        #         my_pad_features(new_data["lg_features_1"], new_data["lg_features_2"], new_data["lg_n1"], new_data["lg_n2"])
+        
         return new_data
 
     def fit(self): 
@@ -608,7 +589,7 @@ class Trainer(object):
         tau = []
         pk10 = []
         pk20 = []
-        matching_list = []
+        # matching_list = []  # my
 
         for pair_type, i, j_list in tqdm(testing_graphs, file=sys.stdout):
             pre = []
@@ -618,7 +599,8 @@ class Trainer(object):
                 data = self.pack_graph_pair((pair_type, i, j))
                 target, gt_ged = data["target"].item(), data["ged"]
                 model_out = self.model(data) if test_k == 0 else self.test_matching(data, test_k)
-                prediction, pre_ged, mapping, masked_index = model_out
+                # prediction, pre_ged, _, = model_out
+                prediction, pre_ged, _, _ = model_out
                 round_pre_ged = round(pre_ged)
 
                 num += 1
@@ -639,9 +621,9 @@ class Trainer(object):
                     num_fea += 1
                 
                 # my
-                mapping = self.my_alignment(masked_index, mapping)
-                sum = self.my_match(mapping, data["mapping"])
-                matching_list.append((data["id_1"], data["id_2"], data["n1"], gt_ged, data["n2"], sum))
+                # mapping = self.my_alignment(masked_index, mapping)
+                # sum = self.my_match(mapping, data["mapping"])
+                # matching_list.append((data["id_1"], data["id_2"], data["n1"], data["n2"], gt_ged, sum))
                 
             t2 = time.time()
             time_usage.append(t2 - t1)
@@ -661,10 +643,10 @@ class Trainer(object):
         pk20 = round(np.mean(pk20), 3)
 
         # my
-        format_str = "{:<10}{:<10}{:<10}{:<10}{:<10}{:<10}"
-        with open(self.args.abs_path + self.args.result_path + self.match_result, 'a') as f:
-            for i in matching_list:
-                print(format_str.format(*i), file=f)
+        # format_str = "{:<10}{:<10}{:<10}{:<10}{:<10}{:<10}"
+        # with open(self.args.abs_path + self.args.result_path + self.match_result, 'a') as f:
+        #     for i in matching_list:
+        #         print(format_str.format(*i), file=f)
         
         # 输出结果
         self.results.append(('model_name', 'dataset', 'graph_set', '#testing_pairs', 'time_usage(s/100p)', 'mse', 'mae', 'acc',

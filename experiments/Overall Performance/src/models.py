@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 from torch_geometric.nn.conv import GCNConv, GINConv
-from layers import AttentionModule, TensorNetworkModule, sinkhorn, MatchingModule, GraphAggregationLayer, Mlp, my_gumbel_softmax
+from layers import AttentionModule, TensorNetworkModule, sinkhorn, MatchingModule, GraphAggregationLayer, Mlp, my_gumbel_softmax, gumbel_sinkhorn
 from math import exp
 from GedMatrix import GedMatrixModule, SimpleMatrixModule
 
@@ -478,7 +478,7 @@ class MyGNN(torch.nn.Module):
         :param abstract_features_1: 节点embedding n*filters_3
         :return pooled_features: 图级embedding filters_3*1  ??
         """
-        pooled_features= self.attention(abstract_features)
+        pooled_features = self.attention(abstract_features)
         return pooled_features
 
     def get_bias_value(self, pooled_features_1, pooled_features_2):
@@ -553,7 +553,7 @@ class MyGNN(torch.nn.Module):
         # calculate ged using map_matrix
         m = torch.nn.Softmax(dim=1)
         soft_matrix = m(map_matrix) * cost_matrix
-        bias_value = self.get_bias_value(pooled_features_1, pooled_features_1)
+        bias_value = self.get_bias_value(pooled_features_1, pooled_features_2)
         score = torch.sigmoid(soft_matrix.sum() + bias_value)
 
         if self.args.target_mode == "exp":
@@ -565,6 +565,156 @@ class MyGNN(torch.nn.Module):
         # score为预测的ged值，pre_ged.item()为处理过的预测ged值
         return score, pre_ged.item(), map_matrix, masked_index
 
+class MyGNN2(torch.nn.Module):
+
+    def __init__(self, args, number_of_labels):
+        """
+        :param args: Arguments object.
+        :param number_of_labels: Number of node labels.
+        """
+        super(MyGNN2, self).__init__()
+        self.args = args
+        self.number_labels = number_of_labels
+        self.setup_layers()
+
+    def setup_layers(self):
+        """
+        Creating the layers.
+        """
+        self.args.gnn_operator = 'gin'
+
+        if self.args.gnn_operator == 'gcn':
+            self.convolution_1 = GCNConv(self.number_labels, self.args.filters_1)
+            self.convolution_2 = GCNConv(self.args.filters_1, self.args.filters_2)
+            self.convolution_3 = GCNConv(self.args.filters_2, self.args.filters_3)
+        elif self.args.gnn_operator == 'gin':
+            nn1 = torch.nn.Sequential(
+                torch.nn.Linear(self.number_labels, self.args.filters_1),
+                torch.nn.ReLU(),
+                torch.nn.Linear(self.args.filters_1, self.args.filters_1),
+                torch.nn.BatchNorm1d(self.args.filters_1, track_running_stats=False))
+
+            nn2 = torch.nn.Sequential(
+                torch.nn.Linear(self.args.filters_1, self.args.filters_2),
+                torch.nn.ReLU(),
+                torch.nn.Linear(self.args.filters_2, self.args.filters_2),
+                torch.nn.BatchNorm1d(self.args.filters_2, track_running_stats=False))
+
+            nn3 = torch.nn.Sequential(
+                torch.nn.Linear(self.args.filters_2, self.args.filters_3),
+                torch.nn.ReLU(),
+                torch.nn.Linear(self.args.filters_3, self.args.filters_3),
+                torch.nn.BatchNorm1d(self.args.filters_3, track_running_stats=False))
+
+            self.convolution_1 = GINConv(nn1, train_eps=True)
+            self.convolution_2 = GINConv(nn2, train_eps=True)
+            self.convolution_3 = GINConv(nn3, train_eps=True)
+        else:
+            raise NotImplementedError('Unknown GNN-Operator.')
+
+        self.mapMatrix = GedMatrixModule(self.args.filters_3, self.args.hidden_dim)
+        self.costMatrix = GedMatrixModule(self.args.filters_3, self.args.hidden_dim)
+        # self.costMatrix = SimpleMatrixModule(self.args.filters_3)
+
+        # bias
+        self.attention = AttentionModule(self.args)
+        self.tensor_network = TensorNetworkModule(self.args)
+
+        self.fully_connected_first = torch.nn.Linear(self.args.tensor_neurons,
+                                                     self.args.bottle_neck_neurons)
+        self.fully_connected_second = torch.nn.Linear(self.args.bottle_neck_neurons,
+                                                      self.args.bottle_neck_neurons_2)
+        self.fully_connected_third = torch.nn.Linear(self.args.bottle_neck_neurons_2,
+                                                     self.args.bottle_neck_neurons_3)
+        self.scoring_layer = torch.nn.Linear(self.args.bottle_neck_neurons_3, 1)
+        # self.bias_model = torch.nn.Linear(2, 1)
+
+    def convolutional_pass(self, edge_index, features):
+        """
+        Making convolutional pass.
+        :param edge_index: Edge indices.
+        :param features: Feature matrix.
+        :return features: Abstract feature matrix.
+        """
+        features = self.convolution_1(features, edge_index)
+        features = torch.nn.functional.relu(features)
+        features = torch.nn.functional.dropout(features,
+                                               p=self.args.dropout,
+                                               training=self.training)
+
+        features = self.convolution_2(features, edge_index)
+        features = torch.nn.functional.relu(features)
+        features = torch.nn.functional.dropout(features,
+                                               p=self.args.dropout,
+                                               training=self.training)
+
+        features = self.convolution_3(features, edge_index)
+        # features = torch.sigmoid(features)
+        return features
+
+    def get_bias_value(self, abstract_features_1, abstract_features_2):
+        pooled_features_1 = self.attention(abstract_features_1)
+        pooled_features_2 = self.attention(abstract_features_2)
+        scores = self.tensor_network(pooled_features_1, pooled_features_2)
+        scores = torch.t(scores)
+
+        scores = torch.nn.functional.relu(self.fully_connected_first(scores))
+        scores = torch.nn.functional.relu(self.fully_connected_second(scores))
+        scores = torch.nn.functional.relu(self.fully_connected_third(scores))
+        score = self.scoring_layer(scores).view(-1)
+        return score
+
+    @staticmethod
+    def ged_from_mapping(matrix, A1, A2, f1, f2):
+        # edge loss
+        A_loss = torch.mm(torch.mm(matrix.t(), A1), matrix) - A2
+        # label loss
+        F_loss = torch.mm(matrix.t(), f1) - f2
+        mapping_ged = ((A_loss * A_loss).sum() + (F_loss * F_loss).sum()) / 2.0
+        return mapping_ged.view(-1)
+    
+    def transport_plan(self, m):
+        """根据嵌入, 通过gumbel_sinkhorn算法计算对齐结果
+        Args:
+            ne1: 图1节点嵌入 n*d
+            ne2: 图2节点嵌入 n*d
+        """
+        # print(m.shape)
+        # input = torch.matmul(ne1, ne2.permute(1,0))
+        return gumbel_sinkhorn(m, 0.1)
+
+    def forward(self, data):
+        """
+        Forward pass with graphs.
+        :param data: Data dictionary.
+        :param is_testing: whether return ged value together with ged score
+        :return score: Similarity score.
+        """
+        edge_index_1 = data["edge_index_1"]
+        edge_index_2 = data["edge_index_2"]
+        features_1 = data["features_1"]
+        features_2 = data["features_2"]
+
+        abstract_features_1 = self.convolutional_pass(edge_index_1, features_1)
+        abstract_features_2 = self.convolutional_pass(edge_index_2, features_2)
+
+        cost_matrix = self.costMatrix(abstract_features_1, abstract_features_2)
+        pre_matrix = self.mapMatrix(abstract_features_1, abstract_features_2)
+        map_matrix = self.transport_plan(pre_matrix)
+
+        # calculate ged using map_matrix
+        # m = torch.nn.Softmax(dim=1)
+        soft_matrix = map_matrix * cost_matrix
+        bias_value = self.get_bias_value(abstract_features_1, abstract_features_2)
+        score = torch.sigmoid(soft_matrix.sum() + bias_value)
+
+        if self.args.target_mode == "exp":
+            pre_ged = -torch.log(score) * data["avg_v"]
+        elif self.args.target_mode == "linear":
+            pre_ged = score * data["hb"]
+        else:
+            assert False
+        return score, pre_ged.item(), map_matrix
 
 class TaGSim(torch.nn.Module):
     """

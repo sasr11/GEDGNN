@@ -156,7 +156,7 @@ def parameter_parser():
 
     parser.add_argument("--model-name",
                         type=str,
-                        default='MyGNN',
+                        default='MyGNN2',
                         help="model name")
 
     parser.add_argument("--graph-pair-mode",

@@ -1,0 +1,13 @@
+代码错误1：
+    位置：GEDGNN\experiments\Overall Performance\src\models.py  556行
+    具体错误：
+        bias_value = self.get_bias_value(pooled_features_1, pooled_features_2)
+        写成了
+        bias_value = self.get_bias_value(pooled_features_1, pooled_features_1)
+    后果：
+        bias_value失去意义
+        前面的4.12之前的MyGNN模型有关的实验结果都有问题
+    发现日期：
+        24.04.12
+    处理：
+        重新实验（还未进行）
