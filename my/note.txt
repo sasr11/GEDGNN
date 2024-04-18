@@ -9,8 +9,8 @@
 ============================================================
 运行注意事项：
 GedGNN、myGNN、MyGNN2切换要改的地方
-    trainer.py 第594行: prediction, pre_ged, _, = model_out
-    trainer.py 第470-行：if n1 != n2:
+    trainer.py 第602行: prediction, pre_ged, _, = model_out
+    trainer.py 第484-行：生成边图信息
 ============================================================
 如果要使用gpu
     trainer.py 第36行参数self.use_gpu改为True
@@ -46,6 +46,8 @@ main()
             * 例：(0,1):((3,1,1,0,1),[((0,1),(1,0),(2,1))])
         - transfer_data_to_torch()  # 数据格式转化为torch
             * self.edge_index 边索引由self.graphs['graph']得到，添加边的反向对和自环
+                tensor([[7, 3, 3, 3, 5, 6, 1, 0, 4, 3, 1, 8, 9, 2, 2, 0, 2, 2, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+                        [3, 1, 8, 9, 2, 2, 0, 2, 2, 7, 3, 3, 3, 5, 6, 1, 0, 4, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9]])
             * self.ged是一个n*n的矩阵(n为图的数量)，存放每个图之间的GED值和其相关信息
                 self.ged[i][j] = (ged_value, ged_nc, ged_in, ged_ie)
             * self.mapping是一个n*n的矩阵(n为图的数量)，存放每个图之间的最佳匹配矩阵
@@ -68,9 +70,11 @@ main()
                                 "edge_index_1: G1边索引, "edge_index_2: G2边索引,
                                 "features_1": G1的one-hot, "features_2": G2的one-hot,
                                 ## MyGNN2独有
-                                "lg_edge_index_1: G1边图的边索引, "lg_edge_index_2: G2边图的边索引,
+                                "lg_node_list_1: G1边图的节点列表（用于图卷积）, "lg_node_list_2: G2边图的节点列表,
                                 "lg_features_1": G1边图的节点特征向量, "lg_features_2": G2边图的节点特征向量,
                                 "lg_n1": G1边图节点数,"lg_n2": G2边图节点数,
+                                "lg_edge_index_mapping_1: G1边图的边映射索引（用于图卷积）, 
+                                "lg_edge_index_mapping_2: G2边图的边映射索引,
                                 ##
                                 "mapping": ground-truth 匹配矩阵,
                                 "n1": G1节点数,"n2": G2节点数,

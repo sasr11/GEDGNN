@@ -480,18 +480,22 @@ class Trainer(object):
             new_data["ta_ged"] = (torch.tensor(ta_ged).float() / higher_bound).to(self.device)
         else:
             assert False
-            
-        # # my, 生成边图信息
-        # new_data["lg_edge_index_1"], new_data["lg_features_1"], new_data["lg_n1"] = \
-        #                         my_lineGraph(new_data["edge_index_1"], new_data["features_1"])
-        # new_data["lg_edge_index_2"], new_data["lg_features_2"], new_data["lg_n2"] = \
-        #                         my_lineGraph(new_data["edge_index_2"], new_data["features_2"])
-        # # my, 对节点数和边数较小图进行填充
+        
+        # my, 生成边图信息
+        # print(new_data["id_1"], new_data["id_2"])
+        new_data["lg_node_list_1"], new_data["lg_edge_index_mapping_1"], new_data["lg_features_1"], new_data["lg_n1"], = \
+                                my_lineGraph(new_data["edge_index_1"], new_data["features_1"])
+        new_data["lg_node_list_2"], new_data["lg_edge_index_mapping_2"], new_data["lg_features_2"], new_data["lg_n2"], = \
+                                my_lineGraph(new_data["edge_index_2"], new_data["features_2"])
+        
+        # my, 对节点数和边数较小图进行填充
         # print("pre: ", new_data["features_1"].shape, new_data["features_2"].shape)
         # if new_data["n1"] != new_data["n2"]: 
         #     new_data["features_1"], new_data["features_2"], new_data["n1"], new_data["n2"] = \
         #         my_pad_features(new_data["features_1"], new_data["features_2"], new_data["n1"], new_data["n2"])
         # print("post: ", new_data["features_1"].shape, new_data["features_2"].shape)
+        
+        
         # if new_data["lg_n1"] != new_data["lg_n2"]: 
         #     new_data["lg_features_1"], new_data["lg_features_2"], new_data["lg_n1"], new_data["lg_n2"] = \
         #         my_pad_features(new_data["lg_features_1"], new_data["lg_features_2"], new_data["lg_n1"], new_data["lg_n2"])
@@ -599,8 +603,8 @@ class Trainer(object):
                 data = self.pack_graph_pair((pair_type, i, j))
                 target, gt_ged = data["target"].item(), data["ged"]
                 model_out = self.model(data) if test_k == 0 else self.test_matching(data, test_k)
-                # prediction, pre_ged, _, = model_out
-                prediction, pre_ged, _, _ = model_out
+                prediction, pre_ged, _, = model_out
+                # prediction, pre_ged, _, _ = model_out
                 round_pre_ged = round(pre_ged)
 
                 num += 1

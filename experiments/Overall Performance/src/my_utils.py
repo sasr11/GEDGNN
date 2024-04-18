@@ -1,5 +1,6 @@
 import torch
 import random
+import time
 import networkx as nx
 
 def my_mask(masked_index, mapping):
@@ -73,12 +74,16 @@ def my_pad_features(f1: torch.Tensor, f2: torch.Tensor, n1: int, n2: int):
         for i in range(n1-n2):
             # 创建一个1xd的全零向量
             padded_features = torch.zeros(1, d)
+            random_index = torch.randint(0, d, (1,))
+            padded_features[0, random_index] = 1
             f2 = torch.cat((f2, padded_features), dim=0)
         return f1, f2, n1, n1
     elif n1 < n2:
         for i in range(n2-n1):
             # 创建一个1xd的全零向量
             padded_features = torch.zeros(1, d)
+            random_index = torch.randint(0, d, (1,))
+            padded_features[0, random_index] = 1
             f1 = torch.cat((f1, padded_features), dim=0)
         return f1, f2, n2, n2
     
@@ -88,20 +93,34 @@ def my_lineGraph(edge_index: list, features: torch.Tensor):
         edge_index (list): 原图的边索引 [(1,2),(2,4)...]
         features (torch.Tensor): 原图的节点特征向量N*d tensor([[],[],...])
     Returns:
-        lg_edge_index: 边图的边索引
+        lg_node_list: 边图的节点列表
+        lg_edge_index_mapping: 边图的边索引映射 
         lg_features: 边图的节点特征向量
         L.number_of_nodes(): 边图的节点数
     """
-    G = nx.Graph()
+    # 去除原图边索引中的自环和反向对
+    _, n = edge_index.shape
+    x = edge_index[0, -1].item()
+    edge_index = edge_index[:, :n-x-1]  # 去除自环
+    _, n = edge_index.shape
+    edge_index = edge_index[:, :int(n/2)]  # 去除反向对
     # 生成线图边索引
-    edge_index = [tuple(i) for i in edge_index]  # 元素转换为元组
+    G = nx.Graph()
+    edge_index = [tuple([i.item(),j.item()]) for i,j in zip(edge_index[0],edge_index[1])]  # 2*n(Torch.tensor) -> n*2(list)
     G.add_edges_from(edge_index)
     L = nx.line_graph(G)  # 生成线图L(G)
-    lg_edge_index = L.edges()  # 得到线图的边索引
     # 生成边图的节点特征向量
     feature_list = []
     for node in L.nodes():
         f = features[node[0]] + features[node[1]]  # 两个端点的特征向量相加
         feature_list.append(f.unsqueeze(0))
     lg_features = torch.cat(feature_list, dim=0)
-    return lg_edge_index, lg_features, L.number_of_nodes()
+    # 建立L的节点（边的元组）到单个整数的映射, 得到在新的节点映射下的边索引（后续的图卷积网络需要）
+    lg_edge_index_mapping = []
+    lg_node_mapping = {edge: idx for idx, edge in enumerate(L.nodes())}
+    for edge in L.edges():
+        lg_edge_index_mapping.append([lg_node_mapping[edge[0]], lg_node_mapping[edge[1]]])
+    lg_edge_index_mapping += [[y, x] for x, y in lg_edge_index_mapping]  # 添加反向对
+    lg_edge_index_mapping += [[x, x] for x in range(L.number_of_nodes())]  # 添加自环
+    lg_edge_index_mapping = torch.tensor(lg_edge_index_mapping).t().long()  # n*2(list) -> 2*n(torch.Tensor)
+    return list(L.nodes()), lg_edge_index_mapping, lg_features, L.number_of_nodes()
