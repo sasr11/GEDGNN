@@ -74,16 +74,16 @@ def my_pad_features(f1: torch.Tensor, f2: torch.Tensor, n1: int, n2: int):
         for i in range(n1-n2):
             # 创建一个1xd的全零向量
             padded_features = torch.zeros(1, d)
-            random_index = torch.randint(0, d, (1,))
-            padded_features[0, random_index] = 1
+            # random_index = torch.randint(0, d, (1,))
+            # padded_features[0, random_index] = 1
             f2 = torch.cat((f2, padded_features), dim=0)
         return f1, f2, n1, n1
     elif n1 < n2:
         for i in range(n2-n1):
             # 创建一个1xd的全零向量
             padded_features = torch.zeros(1, d)
-            random_index = torch.randint(0, d, (1,))
-            padded_features[0, random_index] = 1
+            # random_index = torch.randint(0, d, (1,))
+            # padded_features[0, random_index] = 1
             f1 = torch.cat((f1, padded_features), dim=0)
         return f1, f2, n2, n2
     
@@ -99,11 +99,13 @@ def my_lineGraph(edge_index: list, features: torch.Tensor):
         L.number_of_nodes(): 边图的节点数
     """
     # 去除原图边索引中的自环和反向对
+    # print("原图边索引:", edge_index)  # zhj
     _, n = edge_index.shape
     x = edge_index[0, -1].item()
     edge_index = edge_index[:, :n-x-1]  # 去除自环
     _, n = edge_index.shape
     edge_index = edge_index[:, :int(n/2)]  # 去除反向对
+    # print("去除自环和反向对的原图边索引:", edge_index)  # zhj
     # 生成线图边索引
     G = nx.Graph()
     edge_index = [tuple([i.item(),j.item()]) for i,j in zip(edge_index[0],edge_index[1])]  # 2*n(Torch.tensor) -> n*2(list)

@@ -1,13 +1,24 @@
 代码错误1：
-    位置：GEDGNN\experiments\Overall Performance\src\models.py  556行
-    具体错误：
+    描述：
         bias_value = self.get_bias_value(pooled_features_1, pooled_features_2)
         写成了
         bias_value = self.get_bias_value(pooled_features_1, pooled_features_1)
+    位置：GEDGNN\experiments\Overall Performance\src\models.py  556行
     后果：
         bias_value失去意义
         前面的4.12之前的MyGNN模型有关的实验结果都有问题
     发现日期：
         24.04.12
     处理：
-        重新实验（还未进行）
+        重新实验（完成）
+
+某个数据的问题1：
+    描述：图-93的相关数据进行图卷积操作后输出的节点嵌入全为0
+    位置：abstract_features_1 = self.convolutional_pass(edge_index_1, features_1)
+    后果：
+        map_matrix和cost_matrix的都是相同的元素
+    发现日期：
+        24.04.19
+    处理：
+        进行调试，查看卷积过程
+

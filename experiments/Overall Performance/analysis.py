@@ -137,7 +137,7 @@ def p10(data_list, label_list):
 if __name__ == "__main__":
     # print(os.getcwd())
     path_list = ['experiments/Overall Performance/result/result_GedGNN_AIDS_2404130954.txt',
-                 'experiments/Overall Performance/result/result_MyGNN2_AIDS_2404121719.txt',]
+                 'experiments/Overall Performance/result/result_MyGNN2_AIDS_2404181504.txt',]
     label_list = ['gedgnn_no_bce', 'mygnn2']
     data_list = []
     for path in path_list:

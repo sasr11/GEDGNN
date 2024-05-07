@@ -1,51 +1,94 @@
-实验结果1：gedgnn.txt
+实验1：gedgnn.txt
+    日期：
+    数据集：AIDS，测试图对140*100
+    备注：
+实验2：mygnn.txt（存在NTN模块错误）
     日期：
     数据集：AIDS，测试图对140*100
     备注：只根据预测的节点保留概率做mask
-实验结果2：mygnn.txt（存在NTN模块错误）
-    日期：
-    数据集：AIDS，测试图对140*100
-    备注：只根据预测的节点保留概率做mask
-实验结果3：result_GedGNN_AIDS_2403291148.txt
+实验3：result_GedGNN_AIDS_2403291148.txt
     日期：24-03-29 11:48
     数据集：AIDS，测试图对140*420
     备注：完整的测试集进行测试
-实验结果4：result_MyGNN_AIDS_2403201935.txt（存在NTN模块错误）
+实验4：result_MyGNN_AIDS_2403201935.txt（存在NTN模块错误）
     日期：24-03-20 19:35
     数据集：AIDS，测试图对140*100
     备注：根据预测的节点保留概率做mask，并做对齐和添加BCE权重
-实验结果5：result_MyGNN_AIDS_2403210905.txt（存在NTN模块错误）
+实验5：result_MyGNN_AIDS_2403210905.txt（存在NTN模块错误）
     日期：24-03-21 09:05
     数据集：AIDS，测试图对140*100
     备注：根据预测的节点保留概率做mask，并做对齐
-实验结果6：result_MyGNN_AIDS_2404121053.txt
+实验6：result_MyGNN_AIDS_2404121053.txt
     日期：24-04-12 10:53
     数据集：AIDS，测试图对140*100
     备注：修复NTN模块错误后，只根据预测的节点保留概率做mask，没有对齐
-实验结果7：result_MyGNN2_AIDS_2404121719.txt
+实验7：result_MyGNN2_AIDS_2404121719.txt
     日期：24-04-12 17:19
     数据集：AIDS，测试图对140*100
     备注：对节点较少的图进行节点特征填充（随机），使图对节点数一致，
         通过Cross Matrix Model得到A_match，并用Gumbel-Sinkhorn算法
         得到近似一一对齐矩阵去预测GED，去掉了BCEloss
-实验结果8：result_GedGNN_AIDS_2404130954.txt
+实验8：result_GedGNN_AIDS_2404130954.txt
     日期：24-04-13 09:54
     数据集：AIDS，测试图对140*100
     备注：GEDGNN模型，去掉BCELOSS，与实验7做对比
-实验结果9：result_MyGNN_AIDS_2404150925.txt
+实验9：result_MyGNN_AIDS_2404150925.txt
     日期：24-04-15 09:25
     数据集：AIDS，测试图对140*100
     备注：根据预测的节点保留概率做mask，并做对齐
-实验结果10：result_MyGNN2_AIDS_2404151641.txt
+实验10：result_MyGNN2_AIDS_2404151641.txt
     日期：24-04-15 16:41
     数据集：AIDS，测试图对140*100
     备注：对节点较少的图进行节点特征填充（0向量，这里与实验7不同），使图对节点数一致，
         通过Cross Matrix Model得到A_match，并用Gumbel-Sinkhorn算法
         得到近似一一对齐矩阵去预测GED，去掉了BCEloss
-实验结果11：result_MyGNN2_AIDS_2404160931.txt
+实验11：result_MyGNN2_AIDS_2404160931.txt
     日期：24-04-16 09:31
     数据集：AIDS，测试图对140*100
     备注：由于填充0向量后效果变差，重新进行实验7
+实验12：result_MyGNN2_AIDS_2404181504.txt
+    日期：24-04-18 15:04
+    数据集：AIDS，测试图对140*100
+    备注：将原图转化为线图，通过相同的步骤得到边匹配矩阵，然后结合点匹配矩阵，
+        通过自创的算法得到node_alignment, 用node_alignment代替原来的A_match与A_cost相乘得到GED
+实验13：result_MyGNN2_AIDS_2404221022.txt（效果很差）
+    日期：24-04-22 10:22
+    数据集：AIDS，测试图对140*100
+    备注：在实验12的基础上，把把A_cost的计算模块替换成欧氏距离
+实验14：result_MyGNN2_AIDS_2404221501.txt（效果很差）
+    日期：24-04-22 15:01
+    数据集：AIDS，测试图对140*100
+    备注：在实验12的基础上，把A_cost去掉, 只计算A_match, 节点对齐结果直接与A_match相乘计算GED
+实验15：result_MyGNN2_AIDS_2404221741.txt
+    日期：24-04-22 17:41
+    数据集：AIDS，测试图对140*100
+    备注：对节点较少的图进行节点特征填充(填充0向量)，只计算A_match(去掉A_cost), 用gumbel-Sinkhorn算法
+        从A_match中得到node_alignment，用A_match*node_alignment计算GED。
+实验16：result_MyGNN2_AIDS_2404231026.txt
+    日期：24-04-23 10:26
+    数据集：AIDS，测试图对140*100
+    备注：使用实验15的框架，但将原本的图替换为边图，即使用边嵌入来预测GED
+实验17：result_MyGNN2_AIDS_2404251410.txt（效果很差）
+    日期：24-04-25 14:10
+    数据集：AIDS，测试图对140*100
+    备注：两条线路: 节点相似度矩阵和边相似度矩阵 -> 自己的对齐算法(不可微) -> M -> 节点相似度矩阵*M -> GEDLoss
+                   边相似度矩阵(需填充) -> gumbel_sinkhorn(可微) -> M_edge -> 边相似度矩阵*M_edge -> GEDLoss
+实验18：result_MyGNN2_AIDS_2404251736.txt
+    日期：24-04-25 17:36
+    数据集：AIDS，测试图对140*100
+    备注：两条线路: 节点相似度矩阵(需填充) -> gumbel_sinkhorn(可微) -> M -> 节点相似度矩阵*M -> GEDLoss
+                   边相似度矩阵(需填充) -> gumbel_sinkhorn(可微) -> M_edge -> 边相似度矩阵*M_edge -> GEDLoss
+实验19：result_MyGNN2_AIDS_2405061035.txt
+    日期：24-05-06 10:35
+    数据集：AIDS，测试图对140*100
+    备注：Cross -> A_match
+          LRL+GS -> P 
+          A_match*P -> GEDLoss
+实验20：result_MyGNN2_AIDS_2405071045.txt
+    日期：24-05-07 10:45
+    数据集：AIDS，测试图对140*100
+    备注：根据IOSNET模型的LRL操作，在实验19的基础上，对填充操作进行了修改，在得到嵌入后在进行填充，并对A_match进行mask操作
+            消除填充操作产生的影响。
 ----------------------------------------
 
 实验结果1：match_MyGNN_AIDS_2403210905.txt

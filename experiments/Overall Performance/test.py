@@ -145,10 +145,11 @@ def gumbel_sinkhorn(log_alpha: torch.Tensor, tau: float = 1.0, n_iter: int = 20,
     return sampled_perm_mat
 
 def apply_gs():
-    p = torch.tensor([[0.1, 0.9, 0.3, 0.2],
-                        [0.4, 0.5, 0.6, 0.3],
-                        [0.4, 0.3, 0.7, 0.1],
-                        [0.0, 0.0, 0.0, 0.0]], dtype=torch.float32)
+    p = torch.tensor([[0.1, 0.9, 0.3, 0.2, 0.0],
+                        [0.4, 0.5, 0.6, 0.4, 0.0],
+                        [0.4, 0.3, 0.7, 0.1, 0.0],
+                        [0.0, 0.0, 0.0, 0.0, 0.0],
+                        [0.0, 0.0, 0.0, 0.0, 0.0]], dtype=torch.float32)
     r = gumbel_sinkhorn(p, 0.1)
     row_sums = torch.sum(r, dim=1)
     col_sums = torch.sum(r, dim=0)
@@ -286,7 +287,7 @@ def node_alignment_with_edge():
         # print("col_list:", col_list)
         # 得到边图节点对z
         max_score = -1
-        lg_node_1, lg_node_2 = None, None
+        lg_node_1, lg_node_2 = (), ()
         for j in row_list:  # 遍历边相似度度矩阵中“原图节点”相关的元素，选择最大值
             for k in col_list:
                 if lg_map_matrix[j][k] > max_score:
@@ -311,9 +312,70 @@ def node_alignment_with_edge():
     for index in aligment_index:
         map_matrix[index[0], index[1]] = 1
     print(map_matrix)
+    return map_matrix
+
+def Euclidean_Distance():
+    # 假设 embeddings1 是 n x 32 的张量，embeddings2 是 m x 32 的张量
+    n, d = 5, 32  # 例如 n = 5
+    m = 7  # 例如 m = 7
+    embeddings1 = torch.randn(n, d)
+    embeddings2 = torch.randn(m, d)
+
+    # 扩展两个张量以进行向量化距离计算
+    # embeddings1.unsqueeze(1) 将变成 n x 1 x 32
+    # embeddings2.unsqueeze(0) 将变成 1 x m x 32
+    # 结果将会广播成 n x m x 32
+    diff = embeddings1.unsqueeze(1) - embeddings2.unsqueeze(0)
+
+    # 计算欧氏距离：先平方，然后在最后一个维度上求和，最后开根号
+    dist_matrix = torch.sqrt(torch.sum(diff ** 2, dim=2))
+    # 计算最小值和最大值
+    min_val = torch.min(dist_matrix)
+    max_val = torch.max(dist_matrix)
+    # 进行最小-最大归一化
+    normalized_dist_matrix = (dist_matrix - min_val) / (max_val - min_val)
+    normalized_dist_matrix = normalized_dist_matrix * 2 -1
+
+    print("Cost matrix (n x m):\n", normalized_dist_matrix)
+
+def f1():
+    """ 节点相似度矩阵和边相似度矩阵得到一个有偏向性的噪声代替gs中的随机噪声"""
+    map_matrix = torch.tensor([
+        [-0.0876, -0.0401, -0.0679, -0.0539,  0.0392, -0.2828, -0.2195, -0.0533, -0.1780, -0.0579],
+        [-0.0534, -0.1842, -0.1351, -0.1889, -0.1086, -0.2122, -0.1998, -0.1768, -0.1016, -0.1773],
+        [-0.1114, -0.1309, -0.1408, -0.0850, -0.0772, -0.2847, -0.2259, -0.2473, -0.2625, -0.2388],
+        [-0.1479, -0.1357, -0.2550, -0.1085, -0.2229, -0.1593, -0.2189, -0.0714, -0.2016, -0.1402],
+        [-0.1510, -0.1799, -0.1988, -0.2105, -0.1961, -0.1336, -0.2262, -0.2012, -0.1765, -0.2066],
+        [-0.1833, -0.2587, -0.1745, -0.1439, -0.1256, -0.1921, -0.2084, -0.0687, -0.2650, -0.1643],
+        [-0.1831, -0.2106, -0.1560, -0.2474, -0.2259, -0.1658, -0.1147, -0.1671, -0.1263, -0.1683],
+        [-0.2363, -0.2498, -0.0784, -0.2131, -0.1367, -0.1598, -0.1704, -0.1169, -0.1856, -0.1105],
+        [-0.1901, -0.3069,  0.0068, -0.3052, -0.2435, -0.0969, -0.0535, -0.1415, -0.1045, -0.1632],
+        [-0.2426, -0.3135,  0.0143, -0.2249, -0.0932, -0.1302, -0.1505, -0.1765, -0.1094, -0.1907]])
+    aligment_matrix = node_alignment_with_edge()
+    print("++++++++++++++++++++++++++++++")
+    # print("uniform_noise:\n", uniform_noise)
+    for i in range(5):
+        uniform_noise = torch.rand_like(map_matrix)
+        gumbel_noise = -torch.log(-torch.log(uniform_noise+1e-20)+1e-20)
+        # print("gumbel_noise:\n", gumbel_noise)
+        biased_gumbel_noise = torch.mul(gumbel_noise, (1 + aligment_matrix * 0.5))
+        # print("biased_gumbel_noise:\n", biased_gumbel_noise)
+        a1 = (map_matrix + gumbel_noise)/0.1
+        a2 = (map_matrix + biased_gumbel_noise)/0.1
+        result1 = log_sinkhorn_norm(a1, 20)
+        result2 = log_sinkhorn_norm(a2, 20)
+        # print("row_sums:", torch.sum(result1, dim=1))
+        # print("col_sums:", torch.sum(result1, dim=0))
+        # print("result:\n", result)
+        print(torch.sum(torch.mul(aligment_matrix, result1)))
+        # print("row_sums:", torch.sum(result2, dim=1))
+        # print("col_sums:", torch.sum(result2, dim=0))
+        print(torch.sum(torch.mul(aligment_matrix, result2)))
+        print("--------------------------------")
 
 if __name__ == "__main__":
-    node_alignment_with_edge()
+    # node_alignment_with_edge()
     # transform_to_line_graph()
-    
+    # ----------------------------------
+    f1()
     pass

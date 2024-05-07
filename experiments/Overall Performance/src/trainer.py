@@ -100,7 +100,7 @@ class Trainer(object):
         Forward pass with a batch of data.
         :param batch: Batch of graph pair locations.
         :return loss: Loss on the batch.
-        """
+        """  
         self.optimizer.zero_grad()
         losses = torch.tensor([0]).float().to(self.device)
 
@@ -117,8 +117,8 @@ class Trainer(object):
                 data = self.pack_graph_pair(graph_pair)
                 target, gt_mapping = data["target"], data["mapping"]
                 prediction, _, mapping = self.model(data)
-                # losses = losses + fixed_mapping_loss(mapping, gt_mapping) + weight * F.mse_loss(target, prediction)
-                losses = losses + weight * F.mse_loss(target, prediction)
+                losses = losses + fixed_mapping_loss(mapping, gt_mapping) + weight * F.mse_loss(target, prediction)
+                # losses = losses + weight * F.mse_loss(target, prediction)
                 if self.args.finetune:
                     if self.args.target_mode == "linear":
                         losses = losses + F.relu(target - prediction)
@@ -155,11 +155,14 @@ class Trainer(object):
                 #         print("----------------------------------------------------\n", file=f)
         elif self.args.model_name == "MyGNN2":
             weight = self.args.loss_weight
-            # flag = True
+            count = 1
             for graph_pair in batch:
+                # print("count =", count)  # zhj
+                count += 1
                 data = self.pack_graph_pair(graph_pair)
                 target, gt_mapping = data["target"], data["mapping"]
-                prediction, _, mapping = self.model(data)
+                prediction, _, lg_prediction = self.model(data)
+                # losses = losses + weight * F.mse_loss(target, prediction) + weight * F.mse_loss(target, lg_prediction)
                 losses = losses + weight * F.mse_loss(target, prediction)
                 if self.args.finetune:
                     if self.args.target_mode == "linear":
@@ -170,6 +173,15 @@ class Trainer(object):
             assert False
 
         losses.backward()
+        
+        # 检查梯度
+        # for name, param in self.model.named_parameters():
+        #     if param.grad is not None:
+        #         print(f"Gradient for {name} is not None")
+        #     else:
+        #         print(f"No gradient for {name}")
+        # time.sleep(10)
+                
         self.optimizer.step()
         return losses.item()
                 
@@ -482,11 +494,11 @@ class Trainer(object):
             assert False
         
         # my, 生成边图信息
-        # print(new_data["id_1"], new_data["id_2"])
-        new_data["lg_node_list_1"], new_data["lg_edge_index_mapping_1"], new_data["lg_features_1"], new_data["lg_n1"], = \
-                                my_lineGraph(new_data["edge_index_1"], new_data["features_1"])
-        new_data["lg_node_list_2"], new_data["lg_edge_index_mapping_2"], new_data["lg_features_2"], new_data["lg_n2"], = \
-                                my_lineGraph(new_data["edge_index_2"], new_data["features_2"])
+        # print(self.gid[new_data["id_1"]], self.gid[new_data["id_2"]])  # zhj
+        # new_data["lg_node_list_1"], new_data["lg_edge_index_mapping_1"], new_data["lg_features_1"], new_data["lg_n1"], = \
+        #                         my_lineGraph(new_data["edge_index_1"], new_data["features_1"])
+        # new_data["lg_node_list_2"], new_data["lg_edge_index_mapping_2"], new_data["lg_features_2"], new_data["lg_n2"], = \
+        #                         my_lineGraph(new_data["edge_index_2"], new_data["features_2"])
         
         # my, 对节点数和边数较小图进行填充
         # print("pre: ", new_data["features_1"].shape, new_data["features_2"].shape)
@@ -494,11 +506,11 @@ class Trainer(object):
         #     new_data["features_1"], new_data["features_2"], new_data["n1"], new_data["n2"] = \
         #         my_pad_features(new_data["features_1"], new_data["features_2"], new_data["n1"], new_data["n2"])
         # print("post: ", new_data["features_1"].shape, new_data["features_2"].shape)
-        
-        
+        # print("pre: ", new_data["lg_features_1"].shape, new_data["lg_features_2"].shape)
         # if new_data["lg_n1"] != new_data["lg_n2"]: 
         #     new_data["lg_features_1"], new_data["lg_features_2"], new_data["lg_n1"], new_data["lg_n2"] = \
         #         my_pad_features(new_data["lg_features_1"], new_data["lg_features_2"], new_data["lg_n1"], new_data["lg_n2"])
+        # print("post: ", new_data["lg_features_1"].shape, new_data["lg_features_2"].shape)
         
         return new_data
 
