@@ -731,14 +731,13 @@ class MyGNN2(torch.nn.Module):
         mapping_ged = ((A_loss * A_loss).sum() + (F_loss * F_loss).sum()) / 2.0
         return mapping_ged.view(-1)
     
-    def transport_plan(self, m):
+    def transport_plan(self, m, flag, bias=None):
         """根据嵌入, 通过gumbel_sinkhorn算法计算对齐结果
         Args:
             m: 相似度矩阵 
         """
         # print(m.shape)
-        # input = torch.matmul(ne1, ne2.permute(1,0))
-        return gumbel_sinkhorn(m, tau=0.1)
+        return gumbel_sinkhorn(m, tau=0.1, noise=flag, bias=bias)
     
     def lg_convolutional(self, lg_edge_index, features):
         """边图的图卷积网络
@@ -763,36 +762,39 @@ class MyGNN2(torch.nn.Module):
         features = self.lg_c3(features, lg_edge_index)
         return features
 
-    def node_alignment_with_edge(self, map_matrix, lg_map_matrix, lg_node_list_1, lg_node_list_2):
+    def node_alignment_with_edge(self, map_matrix, n1, n2, lg_map_matrix, lg_node_list_1, lg_node_list_2):
         """
         Args:
-            map_matrix (torch.Tensor): 节点匹配矩阵 n*m
+            map_matrix (torch.Tensor): 节点相似度 max_size*max_size
             lg_map_matrix (torch.Tensor): 边匹配矩阵 g*h
             lg_node_list_1 (list): 边图1节点列表 g
             lg_node_list_2 (list): 边图2节点列表 h
         Returns:
             map_matrix (torch.Tensor): 节点对齐结果 n
         """
-        # print("map_matrix.shape =", map_matrix.shape)  # zhj
-        # print("map_matrix: \n", map_matrix)
+        # max_size*max_size -> n1*n2
+        max_size = map_matrix.shape[0]
+        matrix = map_matrix[:n1, :n2]  # n1*n2
+        # print("matrix.shape =", matrix.shape)  # zhj
+        # print("matrix: \n", matrix)
         # print("lg_map_matrix.shape =", lg_map_matrix.shape)
         # print("lg_map_matrix:\n", lg_map_matrix)
         # 通过节点相似度矩阵和边相似度矩得到节点对齐结果
         aligment_index = []
-        n, m = map_matrix.shape
+        n, m = matrix.shape
         x = min(n, m)  # 最多对齐的节点数
         i = 0
         while i < x:
             """ 1、从节点相似度矩阵中得到节点对x """
-            max_index = torch.argmax(map_matrix).item()
+            max_index = torch.argmax(matrix).item()
             max_row = max_index // m
             max_col = max_index % m
             # print("原图节点对x:", max_row, max_col)  # zhj
             aligment_index.append([max_row, max_col])
             i += 1
             if i == x: break
-            map_matrix[max_row, :] = -1
-            map_matrix[:, max_col] = -1
+            matrix[max_row, :] = -1
+            matrix[:, max_col] = -1
             """ 2、根据节点对x, 从边相似度矩阵找到另一节点对y """
             row_list = []  # 在边相似度矩阵中，与得到“原图节点”索引相关的“边图节点”索引
             col_list = []
@@ -815,20 +817,21 @@ class MyGNN2(torch.nn.Module):
             new_col = lg_node_2[0] if max_col == lg_node_2[1] else lg_node_2[1]
             # print("原图节点对y:", new_row, new_col)  # zhj
             """ 3、根据节点相似度矩阵的情况, 判断节点对y是否舍弃 """
-            if map_matrix[new_row, new_col] != -1:
+            if matrix[new_row, new_col] != -1:
                 # print("1")
                 aligment_index.append([new_row, new_col])
                 i += 1
-                map_matrix[new_row, :] = -1
-                map_matrix[:, new_col] = -1
+                matrix[new_row, :] = -1
+                matrix[:, new_col] = -1
             # print("------------------------")
         # print("节点对齐结果:", aligment_index)  # zhj
-        map_matrix.zero_()
+        aligment_matrix = torch.zeros(max_size, max_size)
         for index in aligment_index:
-            map_matrix[index[0], index[1]] = 1
-        # print("map_matrix.shape =", map_matrix.shape)  # zhj
-        # print("节点对齐矩阵:\n", map_matrix)  # zhj
-        return map_matrix
+            aligment_matrix[index[0], index[1]] = 1
+        # print("aligment_matrix.shape =", aligment_matrix.shape)  # zhj
+        # print("节点对齐矩阵:\n", aligment_matrix)  # zhj
+        bias_matrix = torch.mul(aligment_matrix, map_matrix)
+        return bias_matrix
 
     def Euclidean_Distance(self, abstract_features_1, abstract_features_2):
         """计算两张图节点嵌入间的欧式距离
@@ -861,7 +864,7 @@ class MyGNN2(torch.nn.Module):
             abstract_features_1 (_type_): 图1节点嵌入 [n1, 32]
             abstract_features_2 (_type_): 图2节点嵌入 [n2, 32]
         Returns:
-            _type_: “硬”置换矩阵
+            _type_: 相似度矩阵
         """
         n1 = abstract_features_1.shape[0]
         n2 = abstract_features_2.shape[0]
@@ -882,9 +885,8 @@ class MyGNN2(torch.nn.Module):
         mask2 = torch.cat((torch.tensor([1]).repeat(n2,1).repeat(1,dim), torch.tensor([0]).repeat(max_size-n2,1).repeat(1,dim)))  # [max_size, 64]
         emb_1 = torch.mul(mask1, transformed_node_emb_1)  # 逐元素相乘
         emb_2 = torch.mul(mask2, transformed_node_emb_2)
-        
-        m = torch.matmul(emb_1, emb_2.permute(1,0))
-        return self.transport_plan(m)  # 虽然在上面mask掉了填充部分，但经过gumbel后，mask的部分仍会有值，需要A_match方面进行mask
+        # 虽然在上面mask掉了填充部分，但经过gumbel后，mask的部分仍会有值，需要A_match方面进行mask
+        return torch.matmul(emb_1, emb_2.permute(1,0))
 
     def Cross(self, abstract_features_1, abstract_features_2, flag):
         """通过嵌入计算相似度矩阵
@@ -893,7 +895,7 @@ class MyGNN2(torch.nn.Module):
             abstract_features_2 (_type_): 图2嵌入 [n1, 32]
             flag (_type_): 节点嵌入 or 边嵌入
         Returns:
-            _type_: 相似度矩阵
+            _type_: 相似度矩阵(通过mask消除填充向量的影响, 同时因为之后会和置换矩阵相乘, 置换矩阵不用再mask)
         """
         n1 = abstract_features_1.shape[0]
         n2 = abstract_features_2.shape[0]
@@ -956,8 +958,8 @@ class MyGNN2(torch.nn.Module):
         # cost_matrix = self.costMatrix(abstract_features_1, abstract_features_2)  # n*m
         # cost_matrix = self.Euclidean_Distance(abstract_features_1, abstract_features_2)
         # map_matrix = self.mapMatrix(abstract_features_1, abstract_features_2)  # n*m
-        map_matrix = self.Cross(abstract_features_1, abstract_features_2, 1)  # n*m
-        # lg_map_matrix = self.Cross(lg_abstract_features_1, lg_abstract_features_2, 0)  # en*em
+        map_matrix = self.Cross(abstract_features_1, abstract_features_2, 1)  # [max_size, max_size]
+        # lg_map_matrix = self.Cross(lg_abstract_features_1, lg_abstract_features_2, 0)  # [e_max_size, e_max_size]
         
         # print(" ")  # zhj
         # print("n1 =", data["n1"])
@@ -974,8 +976,13 @@ class MyGNN2(torch.nn.Module):
         # print("lg_features_2.shape =", lg_features_2.shape)
         # print(" ")
         
-        node_alignment = self.LRL(abstract_features_1, abstract_features_2, 1)
-        # lg_node_alignment = self.LRL(lg_abstract_features_1, lg_abstract_features_2, 0)
+        LRL_map_matrix = self.LRL(abstract_features_1, abstract_features_2, 1)  # [max_size, max_size]
+        # lg_LRL_map_matrix = self.LRL(lg_abstract_features_1, lg_abstract_features_2, 0)  # [e_max_size, e_max_size]
+        
+        # bias_matrix = self.node_alignment_with_edge(map_matrix, data["n1"], data["n2"], lg_map_matrix, lg_node_list_1, lg_node_list_2)  # [max_size, max_size]
+        # node_alignment = gumbel_sinkhorn(LRL_map_matrix, tau=0.1, noise=True, bias=bias_matrix)  # [max_size, max_size]
+        node_alignment = gumbel_sinkhorn(LRL_map_matrix, tau=0.1)  # [max_size, max_size]
+        # lg_node_alignment = gumbel_sinkhorn(lg_LRL_map_matrix, tau=0.1)
         
         # lg_node_alignment = self.transport_plan(lg_m)
         # node_alignment = self.node_alignment_with_edge(map_matrix, lg_map_matrix, lg_node_list_1, lg_node_list_2)  # n*m(0-1矩阵)

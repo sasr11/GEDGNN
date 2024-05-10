@@ -81,14 +81,22 @@
 实验19：result_MyGNN2_AIDS_2405061035.txt
     日期：24-05-06 10:35
     数据集：AIDS，测试图对140*100
-    备注：Cross -> A_match
-          LRL+GS -> P 
+    备注：embedding -> Cross -> A_match
+          embedding -> LRL+GS -> P 
           A_match*P -> GEDLoss
 实验20：result_MyGNN2_AIDS_2405071045.txt
     日期：24-05-07 10:45
     数据集：AIDS，测试图对140*100
     备注：根据IOSNET模型的LRL操作，在实验19的基础上，对填充操作进行了修改，在得到嵌入后在进行填充，并对A_match进行mask操作
             消除填充操作产生的影响。
+实验21：result_MyGNN2_AIDS_2405081013.txt
+    日期：24-05-07 10:45
+    数据集：AIDS，测试图对140*100
+    备注：实验19的方法，但同时对节点（原图）和边（线图）进行，其中节点部分的gumbel_sinkhorn噪声添加了
+            由节点相似度矩阵A_node和边相似度矩阵A_edge得到的偏置(自己算法得到的节点对齐结果)
+结论：
+1、从节点相似度矩阵A_node和边相似度矩阵A_edge中通过自己的对齐算法(不可微)得到的对齐结果M，然后A_node*M去预测GED效果会很差
+2、实验15(node)、16(edge)、18(node和edge)因为使用相同的方法可以进行对比
 ----------------------------------------
 
 实验结果1：match_MyGNN_AIDS_2403210905.txt

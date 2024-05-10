@@ -258,17 +258,22 @@ def log_sinkhorn_norm(log_alpha: torch.Tensor, n_iter: int =20):
         log_alpha = log_alpha - torch.logsumexp(log_alpha, -2, keepdim=True)
     return log_alpha.exp()
 
-def gumbel_sinkhorn(log_alpha, tau = 1.0, n_iter = 20):
+def gumbel_sinkhorn(log_alpha, tau = 1.0, n_iter = 20, noise = False, bias = None, weight = 0.5):
     """
     Args:
         log_alpha: 图对节点或边的相似度矩阵n*n
         tau: 温度系数，控制结果平滑度. Defaults to 1.0.
         n_iter: sinkhorn算法迭代次数. Defaults to 20.
+        noise: 是否添加有偏置的噪声. Defaults to True.
+        weight: 偏置的权重
     Output:
         sampled_perm_mat: 采样结果
     """
     uniform_noise = torch.rand_like(log_alpha)
     gumbel_noise = -torch.log(-torch.log(uniform_noise+1e-20)+1e-20)
+    if noise:
+        # gumbel_noise = torch.mul(gumbel_noise, (1 + bias * weight))
+        gumbel_noise = gumbel_noise + bias
     log_alpha = (log_alpha + gumbel_noise)/tau
     sampled_perm_mat = log_sinkhorn_norm(log_alpha, n_iter)
     return sampled_perm_mat

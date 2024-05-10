@@ -354,11 +354,12 @@ def f1():
     aligment_matrix = node_alignment_with_edge()
     print("++++++++++++++++++++++++++++++")
     # print("uniform_noise:\n", uniform_noise)
-    for i in range(5):
+    for i in range(10):
         uniform_noise = torch.rand_like(map_matrix)
         gumbel_noise = -torch.log(-torch.log(uniform_noise+1e-20)+1e-20)
         # print("gumbel_noise:\n", gumbel_noise)
-        biased_gumbel_noise = torch.mul(gumbel_noise, (1 + aligment_matrix * 0.5))
+        # biased_gumbel_noise = torch.mul(gumbel_noise, (1 + aligment_matrix * 0.5))
+        biased_gumbel_noise = gumbel_noise + torch.mul(aligment_matrix, map_matrix)
         # print("biased_gumbel_noise:\n", biased_gumbel_noise)
         a1 = (map_matrix + gumbel_noise)/0.1
         a2 = (map_matrix + biased_gumbel_noise)/0.1
@@ -377,5 +378,6 @@ if __name__ == "__main__":
     # node_alignment_with_edge()
     # transform_to_line_graph()
     # ----------------------------------
-    f1()
+    # f1()
+    
     pass

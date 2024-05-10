@@ -97,6 +97,7 @@ def p10(data_list, label_list):
         data_list (_type_): 数据列表，每一个元素代表一次实验结果
         label_list (_type_): 每次实验结果的标签
     """
+    size = 25  # 最大轮次
     # 取出数据中的p10的值
     show_data = []
     show_arg = []
@@ -107,14 +108,19 @@ def p10(data_list, label_list):
             a = float(item[11])  # 取出p10的值
             data.append(a)
             arg += a
+        # 如果实验轮次不足size次，填充平均值
+        length = len(data)
+        if length < size:
+            for i in range(size-length):
+                data.append(round(arg/length, 3))
         show_data.append(data)
-        show_arg.append(arg/20)
+        show_arg.append(arg/length)
         
     # 设置画布大小
     plt.figure(figsize=(20, 10), dpi=100)
     
     # 坐标刻度
-    plt.xticks(np.arange(0, 21, 1))
+    plt.xticks(np.arange(0, size+1, 1))
     plt.yticks(np.arange(0.5, 1, 0.05))
     
      # 坐标描述
@@ -122,14 +128,14 @@ def p10(data_list, label_list):
     plt.ylabel('p@10', fontsize=20)
     
     # 设置数据标签位置及大小
-    x = np.arange(1, 21)
+    x = np.arange(1, size+1)
     for y in show_data:
         for a, b in zip(x, y):
             plt.text(a, b+0.002, b, ha='center', va='bottom', fontsize=10)
     # 画图并保存
     for d, a, l in zip(show_data, show_arg, label_list):
         plt.plot(x, d, marker='o', markersize=5, label=l+'_p10')
-        plt.hlines(y=a, xmin=0, xmax=20, label=l+'_arg=%.3f'%a)
+        plt.hlines(y=a, xmin=0, xmax=size, label=l+'_arg=%.3f'%a)
         
     plt.legend()
     plt.savefig('experiments/Overall Performance/result/pic/p@10.png')
@@ -137,13 +143,14 @@ def p10(data_list, label_list):
 if __name__ == "__main__":
     # print(os.getcwd())
     path_list = ['experiments/Overall Performance/result/result_GedGNN_AIDS_2404130954.txt',
-                 'experiments/Overall Performance/result/result_MyGNN2_AIDS_2404181504.txt',]
-    label_list = ['gedgnn_no_bce', 'mygnn2']
+                 'experiments/Overall Performance/result/result_MyGNN2_AIDS_2405071045.txt',
+                 'experiments/Overall Performance/result/result_MyGNN2_AIDS_2405081013.txt',]
+    label_list = ['gedgnn_no_bce', 'mygnn2_node', 'mygnn2_all']
     data_list = []
     for path in path_list:
         data_list.append(load_data(path))
-    MAE(data_list, label_list)
-    Accuracy(data_list, label_list)
+    # MAE(data_list, label_list)
+    # Accuracy(data_list, label_list)
     p10(data_list, label_list)
     
 
