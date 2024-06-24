@@ -913,3 +913,35 @@ map_matrix.shape = torch.Size([8, 9])
         [0., 0., 0., 0., 0., 1., 0., 0., 0.],
         [1., 0., 0., 0., 0., 0., 0., 0., 0.]], grad_fn=<AsStridedBackward0>)
 ------------------------------------------------------------------------
+
+
+
+tensor(0.1022, grad_fn=<MseLossBackward0>) tensor(39.2459, grad_fn=<DivBackward1>)
+------------------------------------
+tensor(0.1321, grad_fn=<MseLossBackward0>) tensor(35.1495, grad_fn=<DivBackward1>)
+------------------------------------
+tensor(0.3237, grad_fn=<MseLossBackward0>) tensor(2.9891, grad_fn=<DivBackward1>)
+------------------------------------
+tensor(0.1080, grad_fn=<MseLossBackward0>) tensor(20.3203, grad_fn=<DivBackward1>)
+------------------------------------
+tensor(1.0254e-07, grad_fn=<MseLossBackward0>) tensor(28.4612, grad_fn=<DivBackward1>)
+------------------------------------
+tensor(0.1049, grad_fn=<MseLossBackward0>) tensor(28.0838, grad_fn=<DivBackward1>)
+------------------------------------
+tensor(0.0896, grad_fn=<MseLossBackward0>) tensor(25.7063, grad_fn=<DivBackward1>)
+------------------------------------
+tensor(0.0593, grad_fn=<MseLossBackward0>) tensor(23.1417, grad_fn=<DivBackward1>)
+------------------------------------
+tensor(0.2195, grad_fn=<MseLossBackward0>) tensor(37.2122, grad_fn=<DivBackward1>)
+------------------------------------
+tensor(0.1843, grad_fn=<MseLossBackward0>) tensor(31.8578, grad_fn=<DivBackward1>)
+------------------------------------
+tensor(0.1040, grad_fn=<MseLossBackward0>) tensor(29.5539, grad_fn=<DivBackward1>)
+------------------------------------
+tensor(0.1091, grad_fn=<MseLossBackward0>) tensor(31.0039, grad_fn=<DivBackward1>)
+------------------------------------
+tensor(0.3417, grad_fn=<MseLossBackward0>) tensor(11.5687, grad_fn=<DivBackward1>)
+------------------------------------
+tensor(0.0239, grad_fn=<MseLossBackward0>) tensor(21.7326, grad_fn=<DivBackward1>)
+------------------------------------
+tensor(0.2794, grad_fn=<MseLossBackward0>) tensor(14.7595, grad_fn=<DivBackward1>)

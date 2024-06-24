@@ -97,7 +97,7 @@ def p10(data_list, label_list):
         data_list (_type_): 数据列表，每一个元素代表一次实验结果
         label_list (_type_): 每次实验结果的标签
     """
-    size = 25  # 最大轮次
+    size = 27  # 最大轮次
     # 取出数据中的p10的值
     show_data = []
     show_arg = []
@@ -113,6 +113,7 @@ def p10(data_list, label_list):
         if length < size:
             for i in range(size-length):
                 data.append(round(arg/length, 3))
+                
         show_data.append(data)
         show_arg.append(arg/length)
         
@@ -142,13 +143,25 @@ def p10(data_list, label_list):
 
 if __name__ == "__main__":
     # print(os.getcwd())
-    path_list = ['experiments/Overall Performance/result/result_GedGNN_AIDS_2404130954.txt',
-                 'experiments/Overall Performance/result/result_MyGNN2_AIDS_2405071045.txt',
-                 'experiments/Overall Performance/result/result_MyGNN2_AIDS_2405081013.txt',]
-    label_list = ['gedgnn_no_bce', 'mygnn2_node', 'mygnn2_all']
+    path_list = ['experiments/Overall Performance/result/result_GedGNN_AIDS_2405131527.txt',
+                 'experiments/Overall Performance/result/result_GedGNN_AIDS_2404130954.txt',
+                 'experiments/Overall Performance/result/result_MyGNN3_AIDS_2405111337.txt',]
+    label_list = ['gedgnn_no_bce_27', 'gedgnn_no_bce_20', 'mygnn3']
     data_list = []
     for path in path_list:
-        data_list.append(load_data(path))
+        data_list.append(load_data(path))  
+        """
+        data_list[
+            path1:[
+                epoch1:[],
+                epoch2:[],
+                ...],
+            path2:[
+                epoch1:[],
+                epoch2:[],
+                ...],
+            ...]
+        """
     # MAE(data_list, label_list)
     # Accuracy(data_list, label_list)
     p10(data_list, label_list)

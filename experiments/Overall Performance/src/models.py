@@ -577,7 +577,7 @@ class MyGNN2(torch.nn.Module):
         self.args = args
         self.number_labels = number_of_labels
         self.setup_layers()
-
+    
     def setup_layers(self):
         """
         Creating the layers.
@@ -615,7 +615,7 @@ class MyGNN2(torch.nn.Module):
 
         self.mapMatrix = GedMatrixModule(self.args.filters_3, self.args.hidden_dim)
         self.lg_mapMatrix = GedMatrixModule(self.args.filters_3, self.args.hidden_dim)
-        self.costMatrix = GedMatrixModule(self.args.filters_3, self.args.hidden_dim)
+        # self.costMatrix = GedMatrixModule(self.args.filters_3, self.args.hidden_dim)
         # self.costMatrix = SimpleMatrixModule(self.args.filters_3)
 
         # bias
@@ -637,27 +637,22 @@ class MyGNN2(torch.nn.Module):
             torch.nn.ReLU(),
             torch.nn.Linear(self.args.filters_1, self.args.filters_1),
             torch.nn.BatchNorm1d(self.args.filters_1, track_running_stats=False))
-
         lg_nn2 = torch.nn.Sequential(
             torch.nn.Linear(self.args.filters_1, self.args.filters_2),
             torch.nn.ReLU(),
             torch.nn.Linear(self.args.filters_2, self.args.filters_2),
             torch.nn.BatchNorm1d(self.args.filters_2, track_running_stats=False))
-
         lg_nn3 = torch.nn.Sequential(
             torch.nn.Linear(self.args.filters_2, self.args.filters_3),
             torch.nn.ReLU(),
             torch.nn.Linear(self.args.filters_3, self.args.filters_3),
             torch.nn.BatchNorm1d(self.args.filters_3, track_running_stats=False))
-
         self.lg_c1 = GINConv(lg_nn1, train_eps=True)
         self.lg_c2 = GINConv(lg_nn2, train_eps=True)
         self.lg_c3 = GINConv(lg_nn3, train_eps=True)
-        
-        #
+        # #
         self.lg_attention = AttentionModule(self.args)
         self.lg_tensor_network = TensorNetworkModule(self.args)
-
         self.lg_fully_connected_first = torch.nn.Linear(self.args.tensor_neurons,
                                                      self.args.bottle_neck_neurons)
         self.lg_fully_connected_second = torch.nn.Linear(self.args.bottle_neck_neurons,
@@ -674,6 +669,36 @@ class MyGNN2(torch.nn.Module):
         self.lg_transform1 = torch.nn.Linear(self.args.filters_3, 64)
         self.lg_relu1 = torch.nn.ReLU()
         self.lg_transform2 = torch.nn.Linear(64, 64)
+        
+        # lg + simgnn gcn
+        # self.feature_count = self.args.tensor_neurons + self.args.bins
+        # self.lg_convolution_1 = GCNConv(self.number_labels, self.args.filters_1)
+        # self.lg_convolution_2 = GCNConv(self.args.filters_1, self.args.filters_2)
+        # self.lg_convolution_3 = GCNConv(self.args.filters_2, self.args.filters_3)
+        # bias
+        # self.lg_attention = AttentionModule(self.args)
+        # self.lg_tensor_network = TensorNetworkModule(self.args)
+        # self.lg_fully_connected_first = torch.nn.Linear(self.feature_count,
+        #                                              self.args.bottle_neck_neurons)
+        # self.lg_fully_connected_second = torch.nn.Linear(self.args.bottle_neck_neurons,
+        #                                               self.args.bottle_neck_neurons_2)
+        # self.lg_fully_connected_third = torch.nn.Linear(self.args.bottle_neck_neurons_2,
+        #                                              self.args.bottle_neck_neurons_3)
+        # self.lg_scoring_layer = torch.nn.Linear(self.args.bottle_neck_neurons_3, 1)
+        
+    def calculate_histogram(self, abstract_features_1, abstract_features_2):
+        """
+        Calculate histogram from similarity matrix.
+        :param abstract_features_1: Feature matrix for graph 1.
+        :param abstract_features_2: Feature matrix for graph 2.
+        :return hist: Histsogram of similarity scores.
+        """
+        scores = torch.mm(abstract_features_1, abstract_features_2).detach()  # n*m
+        scores = scores.view(-1, 1)  # nm*1
+        hist = torch.histc(scores, bins=self.args.bins)  # 16
+        hist = hist / torch.sum(hist)
+        hist = hist.view(1, -1)  # 1*16
+        return hist
 
     def convolutional_pass(self, edge_index, features):
         """
@@ -696,6 +721,46 @@ class MyGNN2(torch.nn.Module):
 
         features = self.convolution_3(features, edge_index)
         # features = torch.sigmoid(features)
+        return features
+
+    def lg_simgnn_gcn(self, edge_index, features):
+        features = self.lg_convolution_1(features, edge_index)
+        features = torch.nn.functional.relu(features)
+        features = torch.nn.functional.dropout(features,
+                                               p=self.args.dropout,
+                                               training=self.training)
+
+        features = self.convolution_2(features, edge_index)
+        features = torch.nn.functional.relu(features)
+        features = torch.nn.functional.dropout(features,
+                                               p=self.args.dropout,
+                                               training=self.training)
+
+        features = self.convolution_3(features, edge_index)
+        # features = torch.sigmoid(features)
+        return features
+    
+    def lg_convolutional(self, lg_edge_index, features):
+        """边图的图卷积网络
+        Args:
+            lg_edge_index (list): 边索引[((1,2),(3,4)),((,),(,)),...]
+            features (torch.Tensor): 节点特征向量 n*29
+        Returns:
+            _type_: 节点嵌入 n*32
+        """
+        features = self.lg_c1(features, lg_edge_index)
+        features = torch.nn.functional.relu(features)
+        features = torch.nn.functional.dropout(features,
+                                               p=self.args.dropout,
+                                               training=self.training)
+
+        features = self.lg_c2(features, lg_edge_index)
+        features = torch.nn.functional.relu(features)
+        features = torch.nn.functional.dropout(features,
+                                               p=self.args.dropout,
+                                               training=self.training)
+
+        features = self.lg_c3(features, lg_edge_index)
         return features
 
     def get_bias_value(self, abstract_features_1, abstract_features_2):
@@ -722,6 +787,22 @@ class MyGNN2(torch.nn.Module):
         score = self.lg_scoring_layer(scores).view(-1)
         return score
 
+    def lg_simgnn(self, abstract_features_1, abstract_features_2):
+        # NTN
+        pooled_features_1 = self.lg_attention(abstract_features_1)  # 32*1
+        pooled_features_2 = self.lg_attention(abstract_features_2)
+        scores = self.lg_tensor_network(pooled_features_1, pooled_features_2)
+        scores = torch.t(scores)
+        # hist
+        hist = self.calculate_histogram(abstract_features_1, torch.t(abstract_features_2))  # 1*16
+        scores = torch.cat((scores, hist), dim=1).view(1, -1)  # 1*16
+        scores = F.relu(self.lg_fully_connected_first(scores))
+        scores = F.relu(self.lg_fully_connected_second(scores))
+        scores = F.relu(self.lg_fully_connected_third(scores))
+        
+        score = torch.sigmoid(self.scoring_layer(scores).view(-1))
+        return score
+    
     @staticmethod
     def ged_from_mapping(matrix, A1, A2, f1, f2):
         # edge loss
@@ -730,54 +811,29 @@ class MyGNN2(torch.nn.Module):
         F_loss = torch.mm(matrix.t(), f1) - f2
         mapping_ged = ((A_loss * A_loss).sum() + (F_loss * F_loss).sum()) / 2.0
         return mapping_ged.view(-1)
-    
-    def transport_plan(self, m, flag, bias=None):
-        """根据嵌入, 通过gumbel_sinkhorn算法计算对齐结果
-        Args:
-            m: 相似度矩阵 
-        """
-        # print(m.shape)
-        return gumbel_sinkhorn(m, tau=0.1, noise=flag, bias=bias)
-    
-    def lg_convolutional(self, lg_edge_index, features):
-        """边图的图卷积网络
-        Args:
-            lg_edge_index (list): 边索引[((1,2),(3,4)),((,),(,)),...]
-            features (torch.Tensor): 节点特征向量 n*29
-        Returns:
-            _type_: 节点嵌入 n*32
-        """
-        features = self.lg_c1(features, lg_edge_index)
-        features = torch.nn.functional.relu(features)
-        features = torch.nn.functional.dropout(features,
-                                               p=self.args.dropout,
-                                               training=self.training)
-
-        features = self.lg_c2(features, lg_edge_index)
-        features = torch.nn.functional.relu(features)
-        features = torch.nn.functional.dropout(features,
-                                               p=self.args.dropout,
-                                               training=self.training)
-
-        features = self.lg_c3(features, lg_edge_index)
-        return features
 
     def node_alignment_with_edge(self, map_matrix, n1, n2, lg_map_matrix, lg_node_list_1, lg_node_list_2):
         """
         Args:
             map_matrix (torch.Tensor): 节点相似度 max_size*max_size
-            lg_map_matrix (torch.Tensor): 边匹配矩阵 g*h
+            lg_map_matrix (torch.Tensor): 边匹配矩阵 g*h 取值[-1,1]之间
             lg_node_list_1 (list): 边图1节点列表 g
             lg_node_list_2 (list): 边图2节点列表 h
         Returns:
             map_matrix (torch.Tensor): 节点对齐结果 n
         """
         # max_size*max_size -> n1*n2
+        map_matrix = -map_matrix  # 因为是cost矩阵需要取反
+        lg_map_matrix = -lg_map_matrix
         max_size = map_matrix.shape[0]
         matrix = map_matrix[:n1, :n2]  # n1*n2
         # print("matrix.shape =", matrix.shape)  # zhj
         # print("matrix: \n", matrix)
         # print("lg_map_matrix.shape =", lg_map_matrix.shape)
+        # print("lg_map_matrix: \n", lg_map_matrix)
+        # print(len(lg_node_list_1), len(lg_node_list_2))
+        # print(lg_node_list_1)
+        # print(lg_node_list_2)
         # print("lg_map_matrix:\n", lg_map_matrix)
         # 通过节点相似度矩阵和边相似度矩得到节点对齐结果
         aligment_index = []
@@ -793,8 +849,8 @@ class MyGNN2(torch.nn.Module):
             aligment_index.append([max_row, max_col])
             i += 1
             if i == x: break
-            matrix[max_row, :] = -1
-            matrix[:, max_col] = -1
+            matrix[max_row, :] = -100
+            matrix[:, max_col] = -100
             """ 2、根据节点对x, 从边相似度矩阵找到另一节点对y """
             row_list = []  # 在边相似度矩阵中，与得到“原图节点”索引相关的“边图节点”索引
             col_list = []
@@ -803,7 +859,7 @@ class MyGNN2(torch.nn.Module):
             for index in range(len(lg_node_list_2)):
                 if max_col in lg_node_list_2[index]: col_list.append(index)
             # 得到边图节点对z
-            max_score = -1
+            max_score = -100
             lg_node_1, lg_node_2 = (), ()
             for j in row_list:  # 遍历边相似度度矩阵中“原图节点”相关的元素，选择最大值
                 for k in col_list:
@@ -812,17 +868,26 @@ class MyGNN2(torch.nn.Module):
                         lg_node_1 = lg_node_list_1[j]
                         lg_node_2 = lg_node_list_2[k]
             # print("边图节点对z:", lg_node_1, lg_node_2)  # zhj
+            if lg_node_1 == () or lg_node_2 == ():
+                print("lg_map_matrix: \n", lg_map_matrix)
+                print(lg_node_list_1)
+                print(lg_node_list_2)
+                print("原图节点对x:", max_row, max_col)
+                print("row_list:", row_list)
+                print("col_list:", col_list)
+                print(j, k)
+                print("边图节点对z:", lg_node_1, lg_node_2)
             # 从边图节点对z中得到原图节点对y
             new_row = lg_node_1[0] if max_row == lg_node_1[1] else lg_node_1[1]
             new_col = lg_node_2[0] if max_col == lg_node_2[1] else lg_node_2[1]
             # print("原图节点对y:", new_row, new_col)  # zhj
             """ 3、根据节点相似度矩阵的情况, 判断节点对y是否舍弃 """
-            if matrix[new_row, new_col] != -1:
+            if matrix[new_row, new_col] != -100:
                 # print("1")
                 aligment_index.append([new_row, new_col])
                 i += 1
-                matrix[new_row, :] = -1
-                matrix[:, new_col] = -1
+                matrix[new_row, :] = -100
+                matrix[:, new_col] = -100
             # print("------------------------")
         # print("节点对齐结果:", aligment_index)  # zhj
         aligment_matrix = torch.zeros(max_size, max_size)
@@ -896,6 +961,7 @@ class MyGNN2(torch.nn.Module):
             flag (_type_): 节点嵌入 or 边嵌入
         Returns:
             _type_: 相似度矩阵(通过mask消除填充向量的影响, 同时因为之后会和置换矩阵相乘, 置换矩阵不用再mask)
+            取值范围(-无穷，+无穷)
         """
         n1 = abstract_features_1.shape[0]
         n2 = abstract_features_2.shape[0]
@@ -917,6 +983,18 @@ class MyGNN2(torch.nn.Module):
             return torch.mul(mask, m)
         return m 
 
+    def lg_cross(self, f1, f2):
+        m = torch.matmul(f1, f2.permute(1,0))
+        x_min = m.min()
+        x_max = m.max()
+        if x_max - x_min == 0:  # 只有一个元素或者所有元素相同
+            print(m)
+            m.zero_()  # 所有元素归0
+            return m
+        m_normalized = (m - x_min) / (x_max - x_min)  # 缩放到 [0, 1]
+        m_scaled = 2 * m_normalized - 1  # 缩放到 [-1, 1]
+        return m_scaled
+
     def forward(self, data):
         """
         Forward pass with graphs.
@@ -929,37 +1007,46 @@ class MyGNN2(torch.nn.Module):
         features_1 = data["features_1"]  # (torch.Tensor)n*d
         features_2 = data["features_2"]  # (torch.Tensor)m*d
         
-        # lg_node_list_1 = data["lg_node_list_1"]  # (list)边图的节点列表：[(7, 3), (3, 8), (3, 9),...]
-        # lg_node_list_2 = data["lg_node_list_2"]
-        # lg_edge_index_mapping_1 = data["lg_edge_index_mapping_1"]  # 边图的边索引映射[((7, 3), (3, 9)),...]->[(0, 2),...]
-        # lg_edge_index_mapping_2 = data["lg_edge_index_mapping_2"]
-        # lg_features_1 = data["lg_features_1"]
-        # lg_features_2 = data["lg_features_2"]
+        lg_node_list_1 = data["lg_node_list_1"]  # (list)边图的节点列表：[(7, 3), (3, 8), (3, 9),...]
+        lg_node_list_2 = data["lg_node_list_2"]
+        lg_edge_index_mapping_1 = data["lg_edge_index_mapping_1"]  # 边图的边索引映射[((7, 3), (3, 9)),...]->[(0, 2),...]
+        lg_edge_index_mapping_2 = data["lg_edge_index_mapping_2"]
+        lg_features_1 = data["lg_features_1"]
+        lg_features_2 = data["lg_features_2"]
         
         # 计算节点嵌入
         abstract_features_1 = self.convolutional_pass(edge_index_1, features_1)
         abstract_features_2 = self.convolutional_pass(edge_index_2, features_2)
         
         # 计算边嵌入
-        # flag_1 = 0
-        # flag_2 = 0
-        # if len(lg_node_list_1) == 1: 
-        #     flag_1 = 1
-        #     lg_features_1 = torch.cat([lg_features_1, lg_features_1], dim=0)
-        # if len(lg_node_list_2) == 1: 
-        #     flag_2 = 1
-        #     lg_features_2 = torch.cat([lg_features_2, lg_features_2], dim=0)
-        # lg_abstract_features_1 = self.lg_convolutional(lg_edge_index_mapping_1, lg_features_1)
-        # lg_abstract_features_2 = self.lg_convolutional(lg_edge_index_mapping_2, lg_features_2)
-        # if flag_1: lg_abstract_features_1 = lg_abstract_features_1[0:1]
-        # if flag_2: lg_abstract_features_2 = lg_abstract_features_2[0:1]
+        flag_1 = 0
+        flag_2 = 0
+        if len(lg_node_list_1) == 1: 
+            flag_1 = 1
+            lg_features_1 = torch.cat([lg_features_1, lg_features_1], dim=0)
+        if len(lg_node_list_2) == 1: 
+            flag_2 = 1
+            lg_features_2 = torch.cat([lg_features_2, lg_features_2], dim=0)
+        lg_abstract_features_1 = self.lg_convolutional(lg_edge_index_mapping_1, lg_features_1)
+        # lg_abstract_features_1 = self.lg_simgnn_gcn(lg_edge_index_mapping_1, lg_features_1)
+        lg_abstract_features_2 = self.lg_convolutional(lg_edge_index_mapping_2, lg_features_2)
+        # lg_abstract_features_2 = self.lg_simgnn_gcn(lg_edge_index_mapping_2, lg_features_2)
+        if flag_1: lg_abstract_features_1 = lg_abstract_features_1[0:1]
+        if flag_2: lg_abstract_features_2 = lg_abstract_features_2[0:1]
+            
 
         # 计算节点和边相似度矩阵，以及节点的成本矩阵
         # cost_matrix = self.costMatrix(abstract_features_1, abstract_features_2)  # n*m
         # cost_matrix = self.Euclidean_Distance(abstract_features_1, abstract_features_2)
         # map_matrix = self.mapMatrix(abstract_features_1, abstract_features_2)  # n*m
         map_matrix = self.Cross(abstract_features_1, abstract_features_2, 1)  # [max_size, max_size]
-        # lg_map_matrix = self.Cross(lg_abstract_features_1, lg_abstract_features_2, 0)  # [e_max_size, e_max_size]
+        lg_map_matrix = self.Cross(lg_abstract_features_1, lg_abstract_features_2, 0)  # [e_max_size, e_max_size]
+        # print("lg_features_1.shape =", lg_features_1.shape)
+        # print("lg_features_2.shape =", lg_features_2.shape)
+        # print("lg_abstract_features_1 =", lg_abstract_features_1.shape)
+        # print("lg_abstract_features_2 =", lg_abstract_features_2.shape)
+        # lg_map_matrix = self.lg_cross(lg_abstract_features_1, lg_abstract_features_2)  # en*em
+        # print("lg_map_matrix =", lg_map_matrix.shape)
         
         # print(" ")  # zhj
         # print("n1 =", data["n1"])
@@ -977,15 +1064,14 @@ class MyGNN2(torch.nn.Module):
         # print(" ")
         
         LRL_map_matrix = self.LRL(abstract_features_1, abstract_features_2, 1)  # [max_size, max_size]
-        # lg_LRL_map_matrix = self.LRL(lg_abstract_features_1, lg_abstract_features_2, 0)  # [e_max_size, e_max_size]
+        lg_LRL_map_matrix = self.LRL(lg_abstract_features_1, lg_abstract_features_2, 0)  # [e_max_size, e_max_size]
         
-        # bias_matrix = self.node_alignment_with_edge(map_matrix, data["n1"], data["n2"], lg_map_matrix, lg_node_list_1, lg_node_list_2)  # [max_size, max_size]
-        # node_alignment = gumbel_sinkhorn(LRL_map_matrix, tau=0.1, noise=True, bias=bias_matrix)  # [max_size, max_size]
-        node_alignment = gumbel_sinkhorn(LRL_map_matrix, tau=0.1)  # [max_size, max_size]
-        # lg_node_alignment = gumbel_sinkhorn(lg_LRL_map_matrix, tau=0.1)
+        bias_matrix = self.node_alignment_with_edge(map_matrix, data["n1"], data["n2"], lg_map_matrix, lg_node_list_1, lg_node_list_2)  # [max_size, max_size]
+        # print("---------------------------------------------------")
+        node_alignment = gumbel_sinkhorn(LRL_map_matrix, tau=0.1, noise=True, bias=bias_matrix)  # [max_size, max_size]
+        # node_alignment = gumbel_sinkhorn(LRL_map_matrix, tau=0.1)  # [max_size, max_size]
+        lg_node_alignment = gumbel_sinkhorn(lg_LRL_map_matrix, tau=0.1)
         
-        # lg_node_alignment = self.transport_plan(lg_m)
-        # node_alignment = self.node_alignment_with_edge(map_matrix, lg_map_matrix, lg_node_list_1, lg_node_list_2)  # n*m(0-1矩阵)
         # print(map_matrix.shape)
         # print(map_matrix)
         # print(node_alignment.shape)
@@ -994,15 +1080,17 @@ class MyGNN2(torch.nn.Module):
         # time.sleep(3)
 
         # 计算map_matrix和bias
-        # m = torch.nn.Softmax(dim=1)
+        # m = torch.nn.Softmax(dim=1)  # 是否要用Softmax
         # soft_matrix = map_matrix * cost_matrix
         soft_matrix = map_matrix * node_alignment
         bias_value = self.get_bias_value(abstract_features_1, abstract_features_2)
         score = torch.sigmoid(soft_matrix.sum() + bias_value)
         
-        # lg_soft_matrix = lg_map_matrix * lg_node_alignment
-        # lg_bias_value = self.lg_get_bias_value(lg_abstract_features_1, lg_abstract_features_2)
-        # lg_score = torch.sigmoid(lg_soft_matrix.sum() + lg_bias_value)
+        lg_soft_matrix = lg_map_matrix * lg_node_alignment
+        lg_bias_value = self.lg_get_bias_value(lg_abstract_features_1, lg_abstract_features_2)
+        lg_score = torch.sigmoid(lg_soft_matrix.sum() + lg_bias_value)
+        
+        # lg_score = self.lg_simgnn(lg_abstract_features_1, lg_abstract_features_2)
         
         if self.args.target_mode == "exp":
             pre_ged = -torch.log(score) * data["avg_v"]
@@ -1011,8 +1099,281 @@ class MyGNN2(torch.nn.Module):
             
         else:
             assert False
-        # return score, pre_ged.item(), lg_score
-        return score, pre_ged.item(), map_matrix  # gedgnn
+        return score, pre_ged.item(), lg_score
+        # return score, pre_ged.item(), map_matrix  # gedgnn
+
+
+class MyGNN3(torch.nn.Module):
+
+    def __init__(self, args, number_of_labels):
+        """
+        :param args: Arguments object.
+        :param number_of_labels: Number of node labels.
+        """
+        super(MyGNN3, self).__init__()
+        self.args = args
+        self.number_labels = number_of_labels
+        self.setup_layers()
+
+    def setup_layers(self):
+        """
+        Creating the layers.
+        """
+        self.args.gnn_operator = 'gin'
+
+        if self.args.gnn_operator == 'gcn':
+            self.convolution_1 = GCNConv(self.number_labels, self.args.filters_1)
+            self.convolution_2 = GCNConv(self.args.filters_1, self.args.filters_2)
+            self.convolution_3 = GCNConv(self.args.filters_2, self.args.filters_3)
+        elif self.args.gnn_operator == 'gin':
+            nn1 = torch.nn.Sequential(
+                torch.nn.Linear(self.number_labels, self.args.filters_1),
+                torch.nn.ReLU(),
+                torch.nn.Linear(self.args.filters_1, self.args.filters_1),
+                torch.nn.BatchNorm1d(self.args.filters_1, track_running_stats=False))
+
+            nn2 = torch.nn.Sequential(
+                torch.nn.Linear(self.args.filters_1, self.args.filters_2),
+                torch.nn.ReLU(),
+                torch.nn.Linear(self.args.filters_2, self.args.filters_2),
+                torch.nn.BatchNorm1d(self.args.filters_2, track_running_stats=False))
+
+            nn3 = torch.nn.Sequential(
+                torch.nn.Linear(self.args.filters_2, self.args.filters_3),
+                torch.nn.ReLU(),
+                torch.nn.Linear(self.args.filters_3, self.args.filters_3),
+                torch.nn.BatchNorm1d(self.args.filters_3, track_running_stats=False))
+
+            self.convolution_1 = GINConv(nn1, train_eps=True)
+            self.convolution_2 = GINConv(nn2, train_eps=True)
+            self.convolution_3 = GINConv(nn3, train_eps=True)
+        else:
+            raise NotImplementedError('Unknown GNN-Operator.')
+
+        self.mapMatrix = GedMatrixModule(self.args.filters_3, self.args.hidden_dim)
+        self.costMatrix = GedMatrixModule(self.args.filters_3, self.args.hidden_dim)
+
+        # bias
+        self.attention = AttentionModule(self.args)
+        self.tensor_network = TensorNetworkModule(self.args)
+        self.fully_connected_first = torch.nn.Linear(self.args.tensor_neurons,
+                                                     self.args.bottle_neck_neurons)
+        self.fully_connected_second = torch.nn.Linear(self.args.bottle_neck_neurons,
+                                                      self.args.bottle_neck_neurons_2)
+        self.fully_connected_third = torch.nn.Linear(self.args.bottle_neck_neurons_2,
+                                                     self.args.bottle_neck_neurons_3)
+        self.scoring_layer = torch.nn.Linear(self.args.bottle_neck_neurons_3, 1)
+        
+        # LRL模块
+        self.transform1 = torch.nn.Linear(self.args.filters_3, 64)
+        self.relu1 = torch.nn.ReLU()
+        self.transform2 = torch.nn.Linear(64, 64)
+        
+        # 
+        self.transform = torch.nn.Linear(self.args.filters_3, self.number_labels)
+        
+    def convolutional_pass(self, edge_index, features):
+        """
+        Making convolutional pass.
+        :param edge_index: Edge indices.
+        :param features: Feature matrix.
+        :return features: Abstract feature matrix.
+        """
+        features = self.convolution_1(features, edge_index)
+        features = torch.nn.functional.relu(features)
+        features = torch.nn.functional.dropout(features,
+                                               p=self.args.dropout,
+                                               training=self.training)
+
+        features = self.convolution_2(features, edge_index)
+        features = torch.nn.functional.relu(features)
+        features = torch.nn.functional.dropout(features,
+                                               p=self.args.dropout,
+                                               training=self.training)
+
+        features = self.convolution_3(features, edge_index)
+        # features = torch.sigmoid(features)
+        return features
+
+    def get_bias_value(self, abstract_features_1, abstract_features_2):
+        pooled_features_1 = self.attention(abstract_features_1)
+        pooled_features_2 = self.attention(abstract_features_2)
+        scores = self.tensor_network(pooled_features_1, pooled_features_2)
+        scores = torch.t(scores)
+
+        scores = torch.nn.functional.relu(self.fully_connected_first(scores))
+        scores = torch.nn.functional.relu(self.fully_connected_second(scores))
+        scores = torch.nn.functional.relu(self.fully_connected_third(scores))
+        score = self.scoring_layer(scores).view(-1)
+        return score
+
+    @staticmethod
+    def ged_from_mapping(matrix, A1, A2, f1, f2):
+        # edge loss
+        A_loss = torch.mm(torch.mm(matrix.t(), A1), matrix) - A2
+        # label loss
+        F_loss = torch.mm(matrix.t(), f1) - f2
+        mapping_ged = ((A_loss * A_loss).sum() + (F_loss * F_loss).sum()) / 2.0
+        return mapping_ged.view(-1)
+    
+    def LRL(self, abstract_features_1, abstract_features_2):
+        """经过LRL和gumbel-sinkhorn得到置换矩阵
+        Args:
+            abstract_features_1 (_type_): 图1节点嵌入 [n1, 32]
+            abstract_features_2 (_type_): 图2节点嵌入 [n2, 32]
+        Returns:
+            _type_: 相似度矩阵
+        """
+        n1 = abstract_features_1.shape[0]
+        n2 = abstract_features_2.shape[0]
+        max_size = max(n1, n2)
+        # 填充
+        abstract_features_1 = F.pad(abstract_features_1, pad=(0,0,0,max_size-n1))  # [max_size, 32]
+        abstract_features_2 = F.pad(abstract_features_2, pad=(0,0,0,max_size-n2))  # [max_size, 32]
+        # LRL
+        transformed_node_emb_1 = self.transform2(self.relu1(self.transform1(abstract_features_1)))  # [max_size, 64]
+        transformed_node_emb_2 = self.transform2(self.relu1(self.transform1(abstract_features_2)))  # [max_size, 64]
+        # mask
+        dim = transformed_node_emb_1.shape[1]
+        mask1 = torch.cat((torch.tensor([1]).repeat(n1,1).repeat(1,dim), torch.tensor([0]).repeat(max_size-n1,1).repeat(1,dim)))  # [max_size, 64]
+        mask2 = torch.cat((torch.tensor([1]).repeat(n2,1).repeat(1,dim), torch.tensor([0]).repeat(max_size-n2,1).repeat(1,dim)))  # [max_size, 64]
+        emb_1 = torch.mul(mask1, transformed_node_emb_1)  # 逐元素相乘
+        emb_2 = torch.mul(mask2, transformed_node_emb_2)
+        # 虽然在上面mask掉了填充部分，但经过gumbel后，mask的部分仍会有值，需要A_match方面进行mask
+        return torch.matmul(emb_1, emb_2.permute(1,0))
+    
+    def Cross(self, abstract_features_1, abstract_features_2):
+        """通过嵌入计算相似度矩阵
+        Args:
+            abstract_features_1 (_type_): 图1嵌入 [n1, 32]
+            abstract_features_2 (_type_): 图2嵌入 [n2, 32]
+            flag (_type_): 节点嵌入 or 边嵌入
+        Returns:
+            _type_: 相似度矩阵(通过mask消除填充向量的影响, 同时因为之后会和置换矩阵相乘, 置换矩阵不用再mask)
+            取值范围(-无穷，+无穷)
+        """
+        n1 = abstract_features_1.shape[0]
+        n2 = abstract_features_2.shape[0]
+        max_size = max(n1, n2)
+        # 填充
+        abstract_features_1 = F.pad(abstract_features_1, pad=(0,0,0,max_size-n1))  # [max_size, 32]
+        abstract_features_2 = F.pad(abstract_features_2, pad=(0,0,0,max_size-n2))  # [max_size, 32]
+        m = self.costMatrix(abstract_features_1, abstract_features_2)  # [max_size, max_size]
+        # mask
+        if n1 > n2:
+            mask = torch.zeros(max_size, max_size)
+            mask[:, :n2] = 1
+            return torch.mul(mask, m)
+        elif n1 < n2:
+            # 为什么不使用上面生成mask的方法？？？
+            mask = torch.cat((torch.tensor([1]).repeat(n1,1).repeat(1,max_size), torch.tensor([0]).repeat(max_size-n1,1).repeat(1,max_size)))  # [max_size, max_size]
+            return torch.mul(mask, m)
+        return m 
+    
+    def generate_pseudo_graph(self, LRL_map_matrix, node_alignment, features_1, features_2):
+        """根据节点相似度矩阵和节点对齐结果交换图1和图2中相似度前60%节点的特征或嵌入
+
+        Args: n1<=n2
+            LRL_map_matrix (_type_): 节点相似度矩阵 n2*n2
+            node_alignment (_type_): 节点对齐结果 n2*n2
+            features_1 (_type_): 图1节点特征 n1*29
+            features_2 (_type_): 图2节点特征 n2*29
+
+        Returns:
+            _type_: 交换后的节点特征
+        """
+        n1 = features_1.shape[0]
+        # 转化为0-1矩阵
+        binarized_matrix = (node_alignment >= 0.5).float()
+        # 裁剪成n1*n2大小
+        cropped_matrix = binarized_matrix[:n1, :]  # 数据集中图1应该都是小于图2的
+        # 获取所有元素为 1 的索引tensor([[x,y],[x,y],...])
+        indices = torch.nonzero(cropped_matrix)  
+        value = torch.tensor([LRL_map_matrix[i[0], i[1]] for i in indices])  # 索引在相似度矩阵的对应的元素
+        k = int(len(value) * 0.6)
+        if k < 1:  # node_alignment中某些行可能不存在大于0.5的值
+            return features_1, features_2, 0.0
+        # 获取前k个最大元素的值及其原索引
+        _, value_topk_indices = torch.topk(value, k)  # tensor([,,])
+        # 交换特征
+        pseudo_features_1 = features_1.clone()
+        pseudo_features_2 = features_2.clone()
+        for x in value_topk_indices:
+            indice = indices[x]  # 通过value索引获得对应的索引
+            i = indice[0]
+            j = indice[1]
+            pseudo_features_1[i] = features_2[j]
+            pseudo_features_2[j] = features_1[i]
+        
+        return pseudo_features_1, pseudo_features_2, k/n1
+
+    def forward(self, data):
+        """
+        Forward pass with graphs.
+        :param data: Data dictionary.
+        :param is_testing: whether return ged value together with ged score
+        :return score: Similarity score.
+        """
+        edge_index_1 = data["edge_index_1"]  # (torch.Tensor)2*n
+        edge_index_2 = data["edge_index_2"]  # (torch.Tensor)2*m
+        features_1 = data["features_1"]  # (torch.Tensor)n*d
+        features_2 = data["features_2"]  # (torch.Tensor)m*d
+        
+        # 计算节点嵌入
+        abstract_features_1 = self.convolutional_pass(edge_index_1, features_1)
+        abstract_features_2 = self.convolutional_pass(edge_index_2, features_2)
+        
+        # 计算节点成本矩阵
+        cost_matrix = self.Cross(abstract_features_1, abstract_features_2)  # max*max mask (max-n)*(max-m)
+        
+        # 计算节点对齐矩阵
+        LRL_map_matrix = self.LRL(abstract_features_1, abstract_features_2)  # max*max
+        node_alignment = gumbel_sinkhorn(LRL_map_matrix, tau=0.1)  # # max*max
+        
+        # 计算伪节点嵌入和成本矩阵
+        # 1
+        # pseudo_features_1, pseudo_features_2 = self.generate_pseudo_graph(LRL_map_matrix, node_alignment, features_1, features_2)
+        # f_1 = self.convolutional_pass(edge_index_1, pseudo_features_1)
+        # f_2 = self.convolutional_pass(edge_index_2, pseudo_features_2)
+        # pseudo_map_matrix = self.LRL(f_1, f_2)  # max*max
+        # n = f_1.size(0)
+        # LRL_map_matrix = LRL_map_matrix[:n, :]
+        # pseudo_map_matrix = pseudo_map_matrix[:n, :]
+        
+        # 2
+        pseudo_features_1, pseudo_features_2, ratio= self.generate_pseudo_graph(LRL_map_matrix, node_alignment, abstract_features_1, abstract_features_2)
+        # n*32 -> n*29
+        pseudo_features_1 = self.transform(pseudo_features_1)
+        pseudo_features_2 = self.transform(pseudo_features_2)
+        f_1 = self.convolutional_pass(edge_index_1, pseudo_features_1)
+        f_2 = self.convolutional_pass(edge_index_2, pseudo_features_2)
+        pseudo_cost_matrix = self.Cross(f_1, f_2)  # max*max
+        # matrix1 = cost_matrix[:n, :]
+        # matrix2 = pseudo_cost_matrix[:n, :]
+        
+        # print("pseudo_features_1.shape =", pseudo_features_1.shape)
+        # print("pseudo_features_2.shape =", pseudo_features_2.shape)
+        # print("f_1.shape =", f_1.shape)
+        # print("f_2.shape =", f_2.shape)
+        # print("pseudo_cost_matrix.shape =", pseudo_cost_matrix.shape)
+        # print(pseudo_cost_matrix)
+        # print("------------------------------------------")
+        # time.sleep(2)
+     
+        # 计算map_matrix和bias
+        m = torch.nn.Softmax(dim=1)
+        soft_matrix = node_alignment * cost_matrix
+        bias_value = self.get_bias_value(abstract_features_1, abstract_features_2)
+        score = torch.sigmoid(soft_matrix.sum() + bias_value)
+        
+        if self.args.target_mode == "exp":
+            pre_ged = -torch.log(score) * data["avg_v"]
+        elif self.args.target_mode == "linear":
+            pre_ged = score * data["hb"]
+        else:
+            assert False
+
+        return score, pre_ged.item(), m(cost_matrix), m(pseudo_cost_matrix), ratio  # gedgnn
 
 
 class TaGSim(torch.nn.Module):

@@ -39,6 +39,7 @@ main()
                 # 训练集
                 dict{"gid"=图id,"n"=节点数,"m"=边数,"labels"=[每个点的标签],"graph"=[节点对]}
                 ...
+                # 验证集
                 # 测试集
                 ...]
             * self.features 为节点one-hot向量
@@ -55,9 +56,14 @@ main()
                                  1,0,0,
                                  0,0,1]
         - init_graph_pairs()  # 构建训练图对集合
-            * self.training_graphs  # 训练图对集合（包含自己与自己的图对）
-            * self.val_graphs  # 验证图对集合
-            * self.testing_graphs   # 测试图对集合
+            * self.training_graphs  # 训练图对集合 (420+1)*420/2 等差数列求和
+                len([(type, id1, id2),...,]) = 88420
+            * self.val_graphs  # 验证图对集合(验证集与训练集随机100个图匹配匹配)  140*100
+                len([(type,test_id,[id1, id2,...id100]),...,]) = 140
+            * self.testing_graphs  # 测试图对集合1(测试集与训练集随机100个图匹配)  140*100
+                同上
+            * self.testing2_graphs  # 测试图对集合2(测试集与测试集随机100个图匹配)  140*100
+                同上
         - setup_model()  # 根据模型名称设置模型
     for epoch in (start, end):  # 模型训练轮次
         -train.fit()  # 训练
@@ -93,6 +99,19 @@ main()
         -trainer.score('test') # 测试，计算指标
             - self.model(data)  # 调用模型的forword函数，得到预测值
             - 计算各个指标
+            for i in 测试集图id: # 140
+                for j in 随机训练集图id: # 100
+                    * mse [,,...,]  # score的均方误差 (s-s*)^2
+                    * mae [,,...,]  # ged的绝对误差   |g-g*|
+                    * pre [,,...,]  # 预测的ged
+                    * gt  [,,...,]  # 真实的ged
+                    * acc int       # 预测ged等于正确的个数
+                    * fea int       # 预测ged大于正确的个数（可行的编辑距离）
+                * rho      # 衡量相关性（预测的ged和真实的ged之间），越高越好
+                * tau      # 衡量相关性（预测的ged和真实的ged之间），越高越好
+                * pk10/20  # 
+
+
 ================================================================
 代码结构
 main()

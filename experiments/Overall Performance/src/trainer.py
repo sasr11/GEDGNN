@@ -16,7 +16,7 @@ from kbest_matching_with_lb import KBestMSolver
 from math import exp
 from scipy.stats import spearmanr, kendalltau
 
-from models import GPN, SimGNN, GedGNN, TaGSim, MyGNN, MyGNN2
+from models import GPN, SimGNN, GedGNN, TaGSim, MyGNN, MyGNN2, MyGNN3
 from GedMatrix import fixed_mapping_loss
 
 
@@ -92,6 +92,13 @@ class Trainer(object):
                 self.args.loss_weight = 1.0
             self.args.gtmap = True
             self.model = MyGNN2(self.args, self.number_of_labels).to(self.device)
+        elif self.args.model_name == "MyGNN3":
+            if self.args.dataset in ["AIDS", "Linux"]:
+                self.args.loss_weight = 10.0
+            else:
+                self.args.loss_weight = 1.0
+            self.args.gtmap = True
+            self.model = MyGNN3(self.args, self.number_of_labels).to(self.device)
         else:
             assert False
 
@@ -162,8 +169,38 @@ class Trainer(object):
                 data = self.pack_graph_pair(graph_pair)
                 target, gt_mapping = data["target"], data["mapping"]
                 prediction, _, lg_prediction = self.model(data)
-                # losses = losses + weight * F.mse_loss(target, prediction) + weight * F.mse_loss(target, lg_prediction)
-                losses = losses + weight * F.mse_loss(target, prediction)
+                losses = losses + weight * F.mse_loss(target, prediction) + weight * F.mse_loss(target, lg_prediction)
+                # losses = losses + weight * F.mse_loss(target, prediction)
+                if self.args.finetune:
+                    if self.args.target_mode == "linear":
+                        losses = losses + F.relu(target - prediction)
+                    else: # "exp"
+                        losses = losses + F.relu(prediction - target)
+        elif self.args.model_name == "MyGNN3":
+            GED_weight = self.args.loss_weight  # 10.0
+            CE_weight = 1.0  # 0.07  1.0  0.2  0.5
+            count = 1
+            GED_losses = torch.tensor([0]).float()
+            CE_losses = torch.tensor([0]).float()
+            ratio_sum = 0
+            for graph_pair in batch:
+                # print("count =", count)  # zhj
+                count += 1
+                data = self.pack_graph_pair(graph_pair)
+                target, gt_mapping = data["target"], data["mapping"]
+                prediction, _, matrix, pseudo_matrix, ratio= self.model(data)
+                GED_loss = GED_weight * F.mse_loss(target, prediction)
+                CE_loss = CE_weight * F.cross_entropy(matrix, pseudo_matrix, reduction='mean')  # 对行为单位做mean
+                # print(map_matrix.shape)
+                # print(map_matrix)
+                # print(pseudo_map_matrix)
+                # print(GED_loss, CE_loss)
+                # print("------------------------------------")
+                # time.sleep(1)
+                losses = losses + GED_loss + CE_loss
+                GED_losses += GED_loss
+                CE_losses += CE_loss
+                ratio_sum += ratio
                 if self.args.finetune:
                     if self.args.target_mode == "linear":
                         losses = losses + F.relu(target - prediction)
@@ -183,7 +220,7 @@ class Trainer(object):
         # time.sleep(10)
                 
         self.optimizer.step()
-        return losses.item()
+        return losses.item(), GED_losses.item(), CE_losses.item(), ratio_sum
                 
     def load_data(self):
         """
@@ -378,7 +415,7 @@ class Trainer(object):
                 for j in range(k):
                     self.training_graphs.append((1, i, j))
 
-        li = []
+        li = []  # 训练集图id列表，用于后续验证集和测试集1的生成
         for i in range(train_num):
             if self.gn[i] <= 10:
                 li.append(i)
@@ -392,6 +429,8 @@ class Trainer(object):
                 k = len(dg[i])
                 self.val_graphs.append((1, i, list(range(k))))
 
+        """生成测试图对"""
+        # 测试集140张图与随机打乱顺序的训练集前100张图
         for i in range(val_num, test_num):
             if self.gn[i] <= 10:
                 random.shuffle(li)
@@ -400,12 +439,12 @@ class Trainer(object):
                 k = len(dg[i])
                 self.testing_graphs.append((1, i, list(range(k))))
                 
-        """生成测试图对"""
-        li = []
+        li = []  # 测试集图id列表，用于后续测试集2的生成
         for i in range(val_num, test_num):
             if self.gn[i] <= 10:
                 li.append(i)
 
+        # 测试集140张图与随机打乱顺序的测试集前100张图
         for i in range(val_num, test_num):
             if self.gn[i] <= 10:
                 random.shuffle(li)
@@ -495,10 +534,10 @@ class Trainer(object):
         
         # my, 生成边图信息
         # print(self.gid[new_data["id_1"]], self.gid[new_data["id_2"]])  # zhj
-        # new_data["lg_node_list_1"], new_data["lg_edge_index_mapping_1"], new_data["lg_features_1"], new_data["lg_n1"], = \
-        #                         my_lineGraph(new_data["edge_index_1"], new_data["features_1"])
-        # new_data["lg_node_list_2"], new_data["lg_edge_index_mapping_2"], new_data["lg_features_2"], new_data["lg_n2"], = \
-        #                         my_lineGraph(new_data["edge_index_2"], new_data["features_2"])
+        new_data["lg_node_list_1"], new_data["lg_edge_index_mapping_1"], new_data["lg_features_1"], new_data["lg_n1"], = \
+                                my_lineGraph(new_data["edge_index_1"], new_data["features_1"])
+        new_data["lg_node_list_2"], new_data["lg_edge_index_mapping_2"], new_data["lg_features_2"], new_data["lg_n2"], = \
+                                my_lineGraph(new_data["edge_index_2"], new_data["features_2"])
         
         # my, 对节点数和边数较小图进行填充
         # print("pre: ", new_data["features_1"].shape, new_data["features_2"].shape)
@@ -531,19 +570,31 @@ class Trainer(object):
             for epoch in range(self.args.epochs):  # 这里只循环一次（self.args.epochs=1），真正的epoch循环在main函数里
                 batches = self.create_batches()
                 loss_sum = 0
+                GED_loss_sum = 0
+                CE_loss_sum = 0
+                ratio_sum = 0  # 真实的节点交换比例
                 main_index = 0
                 for index, batch in enumerate(batches):
-                    batch_total_loss = self.process_batch(batch)  # without average
+                    batch_total_loss, GED_loss, CE_loss, ratio = self.process_batch(batch)  # without average
                     loss_sum += batch_total_loss
+                    GED_loss_sum += GED_loss  #  zhj
+                    CE_loss_sum += CE_loss  # zhj
+                    ratio_sum += ratio
                     main_index += len(batch)
                     loss = loss_sum / main_index  # the average loss of current epoch
+                    ged_loss = GED_loss_sum / main_index
+                    ce_loss = CE_loss_sum / main_index
+                    rt = ratio_sum / main_index
                     pbar.update(len(batch))
                     pbar.set_description(
-                        "Epoch_{}: loss={} - Batch_{}: loss={}".format(self.cur_epoch + 1, round(1000 * loss, 3),
-                                                                       index,
-                                                                       round(1000 * batch_total_loss / len(batch), 3)))
+                        "Epoch_{}: loss={}|GEDloss={}|CEloss={}|ratio={} - Batch_{}: loss={}".format(self.cur_epoch + 1, round(1000 * loss, 3),
+                                                                       round(1000 * ged_loss, 3), round(1000 * ce_loss, 3), round(rt, 3),
+                                                                       index, round(1000 * batch_total_loss / len(batch), 3)))
                 tqdm.write("Epoch {}: loss={}".format(self.cur_epoch + 1, round(1000 * loss, 3)))
                 training_loss = round(1000 * loss, 3)
+                training_loss2 = round(1000 * ged_loss, 3)
+                training_loss3 = round(1000 * ce_loss, 3)
+                training_arg = round(rt, 3)
         t2 = time.time()
         training_time = t2 - t1
         if len(self.values) > 0:
@@ -551,10 +602,10 @@ class Trainer(object):
 
         # 存储结果
         self.results.append(
-            ('model_name', 'dataset', 'graph_set', "current_epoch", "training_time(s/epoch)", "training_loss(1000x)"))
+            ('model_name', 'dataset', 'graph_set', "current_epoch", "training_time(s/epoch)", "training_loss(1000x)", "GED_loss", "CE_loss", "ratio"))
         self.results.append(
-            (self.args.model_name, self.args.dataset, "train", self.cur_epoch + 1, training_time, training_loss))
-        format_str = "{:<15}{:<10}{:<12}{:<18}{:<25}{:<10}"
+            (self.args.model_name, self.args.dataset, "train", self.cur_epoch + 1, training_time, training_loss, training_loss2, training_loss3, training_arg))
+        format_str = "{:<15}{:<10}{:<12}{:<18}{:<25}{:<25}{:<12}{:<12}{:<10}"
         print(format_str.format(*self.results[-2]))
         print(format_str.format(*self.results[-1]))
         with open(self.args.abs_path + self.args.result_path + self.result_filename, 'a') as f:
@@ -567,13 +618,13 @@ class Trainer(object):
     @staticmethod
     def cal_pk(num, pre, gt):
         tmp = list(zip(gt, pre))
-        tmp.sort()
+        tmp.sort()  # 按预测值从小到大排，前n个就是预测的最相似的值
         beta = []
-        for i, p in enumerate(tmp):
+        for i, p in enumerate(tmp):  # 标记前n个
             beta.append((p[1], p[0], i))
-        beta.sort()
+        beta.sort()  # 按真实值从小到大排，前n个就是真实的最相似的值
         ans = 0
-        for i in range(num):
+        for i in range(num):  # 根据标记，统计gt的前n中有几个pre的前n
             if beta[i][2] < num:
                 ans += 1
         return ans / num
@@ -615,9 +666,9 @@ class Trainer(object):
                 data = self.pack_graph_pair((pair_type, i, j))
                 target, gt_ged = data["target"].item(), data["ged"]
                 model_out = self.model(data) if test_k == 0 else self.test_matching(data, test_k)
-                prediction, pre_ged, _, = model_out
-                # prediction, pre_ged, _, _ = model_out
-                round_pre_ged = round(pre_ged)
+                # prediction, pre_ged, _, = model_out
+                prediction, pre_ged, _, _, _ = model_out
+                round_pre_ged = round(pre_ged)  # 四舍五入到个位数
 
                 num += 1
                 if prediction is None:
