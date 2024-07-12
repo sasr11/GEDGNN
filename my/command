@@ -20,3 +20,5 @@ python src/main.py --model-name MyGNN3 --model-epoch-start 0 --model-epoch-end 2
 python src/main.py --model-name MyGNN3 --model-epoch-start 0 --model-epoch-end 15 --model-train 1
 
 nohup python src/main.py --model-epoch-start 0 --model-epoch-end 2 --model-train 1 --demo > log/demo.log 2>&1 &
+
+

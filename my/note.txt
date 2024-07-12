@@ -17,6 +17,8 @@ GedGNN、myGNN、MyGNN2切换要改的地方
                 第38行设备选择看具体空闲GPU
     GedMatrix.py 第140行的x加上.to(d)
     layers.py 第187行
+    LRL() mask.to(d)
+    Cross() mask.to(d)
 ==============================================================
 1、模型的定义
 class GedGNN(torch.nn.Module):
@@ -137,6 +139,13 @@ main()
             - self.model(data)  # 调用模型的forword函数，得到预测值
             - 计算各个指标
 =================================================================
+
+
+
+ERIC与GEDGNN的差异：
+1、GEDGNN：3层GNN，最后一层的输出没有relu和dropout
+    ERIC：4层GNN，每层的输出都进行了relu和dropout
+2、ERIC的正则化损失的权重gamma是一个可变参数
 
 
 

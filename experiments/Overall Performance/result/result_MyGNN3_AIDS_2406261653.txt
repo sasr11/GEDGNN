@@ -1,0 +1,120 @@
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     GED_loss    CE_loss     ratio     
+MyGNN3         AIDS      train       1                 4405.587648153305        172.967                  155.099     17.869      0.517     
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         AIDS      test        14000             2.882               7.795     1.254     0.258     0.558     0.734     0.59      0.517     0.626     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     GED_loss    CE_loss     ratio     
+MyGNN3         AIDS      train       2                 4989.193686246872        80.233                   79.084      1.149       0.519     
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         AIDS      test        14000             2.97                6.676     1.135     0.291     0.748     0.777     0.635     0.551     0.664     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     GED_loss    CE_loss     ratio     
+MyGNN3         AIDS      train       3                 4318.094996213913        64.591                   63.974      0.617       0.517     
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         AIDS      test        14000             2.042               7.201     1.24      0.25      0.41      0.79      0.649     0.552     0.67      
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     GED_loss    CE_loss     ratio     
+MyGNN3         AIDS      train       4                 3615.4836020469666       57.714                   57.418      0.296       0.517     
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         AIDS      test        14000             4.326               6.605     1.062     0.321     0.736     0.796     0.657     0.576     0.689     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     GED_loss    CE_loss     ratio     
+MyGNN3         AIDS      train       5                 3431.662325143814        53.012                   52.863      0.149       0.516     
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         AIDS      test        14000             1.947               7.502     1.202     0.264     0.43      0.798     0.66      0.576     0.693     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     GED_loss    CE_loss     ratio     
+MyGNN3         AIDS      train       6                 2715.252873659134        50.114                   50.039      0.075       0.516     
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         AIDS      test        14000             1.888               6.356     1.045     0.323     0.593     0.805     0.668     0.593     0.694     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     GED_loss    CE_loss     ratio     
+MyGNN3         AIDS      train       7                 2711.549619913101        47.792                   47.753      0.038       0.516     
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         AIDS      test        14000             1.939               6.315     1.036     0.323     0.578     0.819     0.684     0.601     0.711     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     GED_loss    CE_loss     ratio     
+MyGNN3         AIDS      train       8                 2609.9645204544067       45.404                   45.37       0.034       0.516     
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         AIDS      test        14000             1.493               6.37      1.033     0.329     0.652     0.818     0.683     0.61      0.71      
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     GED_loss    CE_loss     ratio     
+MyGNN3         AIDS      train       9                 2239.2725825309753       43.98                    43.974      0.006       0.515     
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         AIDS      test        14000             1.465               6.086     1.015     0.333     0.591     0.82      0.685     0.603     0.71      
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     GED_loss    CE_loss     ratio     
+MyGNN3         AIDS      train       10                2234.876564025879        42.211                   42.209      0.002       0.515     
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         AIDS      test        14000             1.479               5.988     1.013     0.332     0.591     0.822     0.687     0.607     0.71      
+```
+
