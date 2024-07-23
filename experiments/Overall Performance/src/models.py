@@ -1151,7 +1151,7 @@ class MyGNN3(torch.nn.Module):
             raise NotImplementedError('Unknown GNN-Operator.')
 
         self.mapMatrix = GedMatrixModule(self.args.filters_3, self.args.hidden_dim)
-        self.costMatrix = GedMatrixModule(self.args.filters_3, self.args.hidden_dim)
+        self.costMatrix = GedMatrixModule(self.args.filters_2, self.args.hidden_dim)
 
         # bias
         self.attention = AttentionModule(self.args)
@@ -1239,8 +1239,8 @@ class MyGNN3(torch.nn.Module):
         transformed_node_emb_2 = self.transform2(self.relu1(self.transform1(abstract_features_2)))  # [max_size, 64]
         # mask
         dim = transformed_node_emb_1.shape[1]
-        mask1 = torch.cat((torch.tensor([1]).repeat(n1,1).repeat(1,dim), torch.tensor([0]).repeat(max_size-n1,1).repeat(1,dim)))  # [max_size, 64]
-        mask2 = torch.cat((torch.tensor([1]).repeat(n2,1).repeat(1,dim), torch.tensor([0]).repeat(max_size-n2,1).repeat(1,dim)))  # [max_size, 64]
+        mask1 = torch.cat((torch.tensor([1]).repeat(n1,1).repeat(1,dim), torch.tensor([0]).repeat(max_size-n1,1).repeat(1,dim))).to(self.device)  # [max_size, 64]
+        mask2 = torch.cat((torch.tensor([1]).repeat(n2,1).repeat(1,dim), torch.tensor([0]).repeat(max_size-n2,1).repeat(1,dim))).to(self.device)  # [max_size, 64]
         emb_1 = torch.mul(mask1, transformed_node_emb_1)  # 逐元素相乘
         emb_2 = torch.mul(mask2, transformed_node_emb_2)
         # 虽然在上面mask掉了填充部分，但经过gumbel后，mask的部分仍会有值，需要A_match方面进行mask
@@ -1263,14 +1263,15 @@ class MyGNN3(torch.nn.Module):
         abstract_features_1 = F.pad(abstract_features_1, pad=(0,0,0,max_size-n1))  # [max_size, 32]
         abstract_features_2 = F.pad(abstract_features_2, pad=(0,0,0,max_size-n2))  # [max_size, 32]
         m = self.costMatrix(abstract_features_1, abstract_features_2)  # [max_size, max_size]
+        # m = F.pad(m, pad=(0,0,0,max_size-n1))
         # mask
         if n1 > n2:
-            mask = torch.zeros(max_size, max_size)
+            mask = torch.zeros(max_size, max_size).to(self.device)
             mask[:, :n2] = 1
             return torch.mul(mask, m)
         elif n1 < n2:
             # 为什么不使用上面生成mask的方法？？？
-            mask = torch.cat((torch.tensor([1]).repeat(n1,1).repeat(1,max_size), torch.tensor([0]).repeat(max_size-n1,1).repeat(1,max_size)))  # [max_size, max_size]
+            mask = torch.cat((torch.tensor([1]).repeat(n1,1).repeat(1,max_size), torch.tensor([0]).repeat(max_size-n1,1).repeat(1,max_size))).to(self.device)  # [max_size, max_size]
             return torch.mul(mask, m)
         return m 
     
@@ -1441,8 +1442,8 @@ class MyGNN3(torch.nn.Module):
         # f_2 = torch.nn.functional.relu(self.trans(f_2))  # mlp
         f_1 = torch.nn.functional.relu(f_1)
         f_2 = torch.nn.functional.relu(f_2)
-        batch_1 = torch.zeros(f_1.size(0), dtype=torch.int64)
-        batch_2 = torch.zeros(f_2.size(0), dtype=torch.int64)
+        batch_1 = torch.zeros(f_1.size(0), dtype=torch.int64).to(self.device)
+        batch_2 = torch.zeros(f_2.size(0), dtype=torch.int64).to(self.device)
         g_1 = global_add_pool(f_1, batch_1)
         g_2 = global_add_pool(f_2, batch_2)
         self_sim_1   = torch.mm(f_1, g_1.t())  # n1*1
@@ -1467,7 +1468,27 @@ class MyGNN3(torch.nn.Module):
         # print(L_1, L_2, L_1 - L_2)
         # print("=========================================")
         # time.sleep(2)
-        return (L_1 - L_2) * self.gamma
+        return L_1 - L_2
+    
+    def LRL_Cross(self, f1, f2):
+        n1 = f1.shape[0]
+        n2 = f2.shape[0]
+        max_n = max(n1, n2)
+        max_size = 10
+        # LRL
+        emb_1 = self.transform2(self.relu1(self.transform1(f1)))  # [n1, 32]
+        emb_2 = self.transform2(self.relu1(self.transform1(f2)))  # [n2, 32]
+        # emb_1 = F.pad(emb_1, pad=(0,0,0,max_n-n1))  # [max_n, 32]
+        # emb_2 = F.pad(emb_2, pad=(0,0,0,max_n-n2))  # [max_n, 32]
+        # Cross
+        cost_matrix = self.costMatrix(emb_1, emb_2)  # [n1, n2]  注意costMatrix的参数
+        # gs
+        sinkhorn_input = F.pad(cost_matrix, pad=(0,max_n-n2,0,max_n-n1))  # [max_n, max_n]
+        transport_plan = gumbel_sinkhorn(sinkhorn_input, tau=0.1)  # [max_n, max_n]
+        # 填充
+        transport_plan = F.pad(transport_plan, pad=(0,max_size-max_n,0,max_size-max_n))  # [10, 10]
+        cost_matrix = F.pad(cost_matrix, pad=(0,max_size-n2,0,max_size-n1))  # [10,10]
+        return cost_matrix, transport_plan
     
     def forward(self, data):
         """
@@ -1486,14 +1507,16 @@ class MyGNN3(torch.nn.Module):
         abstract_features_1 = self.convolutional_pass(edge_index_1, features_1)
         abstract_features_2 = self.convolutional_pass(edge_index_2, features_2)
         
+        cost_matrix, node_alignment = self.LRL_Cross(abstract_features_1, abstract_features_2)
+        
         # 计算节点成本矩阵
-        cost_matrix = self.Cross(abstract_features_1, abstract_features_2)  # max*max mask (max-n)*(max-m)
+        # cost_matrix = self.Cross(abstract_features_1, abstract_features_2)  # max*max mask (max-n)*(max-m)
         # cost_matrix = self.Euclidean_Distance(abstract_features_1, abstract_features_2)
         # cost_matrix = self.Cosin_similarty(abstract_features_1, abstract_features_2)
         
         # 计算节点对齐矩阵
-        LRL_map_matrix = self.LRL(abstract_features_1, abstract_features_2)  # max*max
-        node_alignment = gumbel_sinkhorn(LRL_map_matrix, tau=0.1)  # # max*max
+        # LRL_map_matrix = self.LRL(abstract_features_1, abstract_features_2)  # max*max
+        # node_alignment = gumbel_sinkhorn(LRL_map_matrix, tau=0.1)  # # max*max
         
         
         # 1 相似度矩阵
@@ -1540,9 +1563,9 @@ class MyGNN3(torch.nn.Module):
         # loss_reg = self.Reg(abstract_features_1, abstract_features_2, g1, g2)  # 欧式或余弦
         # loss_reg = self.Reg2(abstract_features_1, abstract_features_2, g1, g2)  # 
         
-        loss_reg = 0
-        if self.training:
-            loss_reg = self.AReg(abstract_features_1, abstract_features_2)
+        # loss_reg = 0
+        # if self.training:
+        #     loss_reg = self.AReg(abstract_features_1, abstract_features_2) * self.gamma
         
         # print(abstract_features_1)
         # print(abstract_features_2)
@@ -1567,7 +1590,8 @@ class MyGNN3(torch.nn.Module):
         
         
         # return score, pre_ged.item(), matrix1, matrix2, ratio
-        return score, pre_ged.item(), loss_reg
+        # return score, pre_ged.item(), loss_reg, self.gamma
+        return score, pre_ged.item(), cost_matrix
 
 
 class TaGSim(torch.nn.Module):

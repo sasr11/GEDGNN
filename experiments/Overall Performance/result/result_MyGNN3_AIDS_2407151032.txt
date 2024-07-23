@@ -1,0 +1,120 @@
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     GED_loss    REG_loss    
+MyGNN3         AIDS      train       1                 1343.0998749732971       11.967                   11.968      -0.002      
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         AIDS      test        14000             0.728               8.113     1.284     0.249     0.672     0.732     0.588     0.506     0.628     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     GED_loss    REG_loss    
+MyGNN3         AIDS      train       2                 1387.803965330124        -369.93                  10.947      -380.877    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         AIDS      test        14000             0.731               11.285    1.5       0.224     0.666     0.578     0.448     0.409     0.537     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     GED_loss    REG_loss    
+MyGNN3         AIDS      train       3                 1320.7405698299408       -1702.741                12.312      -1715.053   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         AIDS      test        14000             0.712               9.664     1.414     0.235     0.524     0.616     0.479     0.415     0.549     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     GED_loss    REG_loss    
+MyGNN3         AIDS      train       4                 1282.4086380004883       -3089.335                11.721      -3101.055   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         AIDS      test        14000             0.718               9.653     1.409     0.23      0.623     0.614     0.478     0.439     0.554     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     GED_loss    REG_loss    
+MyGNN3         AIDS      train       5                 1308.2458038330078       -4513.812                11.332      -4525.144   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         AIDS      test        14000             0.7                 9.086     1.381     0.234     0.668     0.614     0.479     0.441     0.547     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     GED_loss    REG_loss    
+MyGNN3         AIDS      train       6                 1248.8169260025024       -6515.107                11.225      -6526.331   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         AIDS      test        14000             0.705               9.856     1.421     0.233     0.593     0.603     0.471     0.42      0.54      
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     GED_loss    REG_loss    
+MyGNN3         AIDS      train       7                 1258.7694458961487       -8954.11                 11.408      -8965.518   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         AIDS      test        14000             0.688               9.566     1.402     0.237     0.59      0.589     0.459     0.4       0.529     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     GED_loss    REG_loss    
+MyGNN3         AIDS      train       8                 1241.5853559970856       -11235.504               11.897      -11247.4    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         AIDS      test        14000             0.678               10.225    1.479     0.216     0.687     0.594     0.462     0.406     0.547     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     GED_loss    REG_loss    
+MyGNN3         AIDS      train       9                 1249.142257452011        -13499.784               11.842      -13511.626  
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         AIDS      test        14000             0.694               9.593     1.394     0.242     0.646     0.585     0.457     0.404     0.53      
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     GED_loss    REG_loss    
+MyGNN3         AIDS      train       10                1307.5913820266724       -15803.349               11.936      -15815.285  
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         AIDS      test        14000             0.698               9.553     1.392     0.237     0.615     0.603     0.471     0.4       0.54      
+```
+

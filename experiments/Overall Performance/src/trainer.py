@@ -44,10 +44,10 @@ class Trainer(object):
         # print("sample_store =", self.sample_store)  # 存放每个batch第一个图对的预测对齐结果和真实对齐结果
         
 
-        # self.use_gpu = torch.cuda.is_available()
-        self.use_gpu = False
+        self.use_gpu = torch.cuda.is_available()
+        # self.use_gpu = False
         print("use_gpu =", self.use_gpu)
-        self.device = torch.device('cuda:0') if self.use_gpu else torch.device('cpu')
+        self.device = torch.device('cuda:1') if self.use_gpu else torch.device('cpu')
 
         self.load_data()
         self.transfer_data_to_torch()
@@ -177,23 +177,23 @@ class Trainer(object):
                     else: # "exp"
                         losses = losses + F.relu(prediction - target)
         elif self.args.model_name == "MyGNN3":
-            GED_weight = 10.0  # 10.0  self.args.loss_weight
+            GED_weight = 1.0  # 10.0  self.args.loss_weight
             # CE_weight = 10.0  # 0.07  1.0  0.2  0.5
-            reg_weight = 10.0
+            # reg_weight = 1.0
             count = 1
-            GED_losses = torch.tensor([0]).float()
+            # GED_losses = torch.tensor([0]).float().to(self.device)
             # CE_losses = torch.tensor([0]).float()
             # ratio_sum = 0
-            reg_losses = torch.tensor([0]).float()
+            # reg_losses = torch.tensor([0]).float().to(self.device)
             for graph_pair in batch:
                 # print("count =", count)  # zhj
                 count += 1
                 data = self.pack_graph_pair(graph_pair)
                 target, gt_mapping = data["target"], data["mapping"]
                 # prediction, _, matrix, pseudo_matrix, ratio= self.model(data)
-                prediction, _, loss_reg = self.model(data)
+                prediction, _, _ = self.model(data)
                 GED_loss = GED_weight * F.mse_loss(target, prediction)
-                reg_loss = reg_weight * loss_reg
+                # reg_loss = reg_weight * loss_reg
                 # CE_loss = CE_weight * F.cross_entropy(matrix, pseudo_matrix, reduction='mean')  # 对行为单位做mean
                 # CE_loss = CE_weight * F.mse_loss(matrix, pseudo_matrix)
                 
@@ -205,11 +205,11 @@ class Trainer(object):
                 # time.sleep(1)
                 
                 # losses = losses + GED_loss + CE_loss
-                losses = losses + GED_loss + reg_loss
-                GED_losses += GED_loss
+                losses = losses + GED_loss
+                # GED_losses += GED_loss
                 # CE_losses += CE_loss
                 # ratio_sum += ratio
-                reg_losses += reg_loss
+                # reg_losses += reg_loss
                 if self.args.finetune:
                     if self.args.target_mode == "linear":
                         losses = losses + F.relu(target - prediction)
@@ -230,7 +230,7 @@ class Trainer(object):
                 
         self.optimizer.step()
         # return losses.item(), GED_losses.item(), CE_losses.item(), ratio_sum
-        return losses.item(), GED_losses.item(), reg_losses.item()
+        return losses.item()
                 
     def load_data(self):
         """
@@ -581,25 +581,25 @@ class Trainer(object):
             for epoch in range(self.args.epochs):  # 这里只循环一次（self.args.epochs=1），真正的epoch循环在main函数里
                 batches = self.create_batches()
                 loss_sum = 0
-                GED_loss_sum = 0
-                REG_loss_sum = 0
+                # GED_loss_sum = 0
+                # REG_loss_sum = 0
                 # CE_loss_sum = 0
                 # ratio_sum = 0  # 真实的节点交换比例
                 main_index = 0
                 for index, batch in enumerate(batches):
                     # batch_total_loss, GED_loss, CE_loss, ratio = self.process_batch(batch)  # without average
-                    batch_total_loss, GED_loss, REG_loss = self.process_batch(batch)  # without average
+                    batch_total_loss = self.process_batch(batch)  # without average
                     # print("\n", index, GED_loss, REG_loss)
                     # time.sleep(10)
                     loss_sum += batch_total_loss
-                    GED_loss_sum += GED_loss  #  zhj
+                    # GED_loss_sum += GED_loss  #  zhj
                     # CE_loss_sum += CE_loss  # zhj
                     # ratio_sum += ratio
-                    REG_loss_sum += REG_loss
+                    # REG_loss_sum += REG_loss
                     main_index += len(batch)
                     loss = loss_sum / main_index  # the average loss of current epoch
-                    ged_loss = GED_loss_sum / main_index
-                    reg_loss = REG_loss_sum / main_index
+                    # ged_loss = GED_loss_sum / main_index
+                    # reg_loss = REG_loss_sum / main_index
                     # ce_loss = CE_loss_sum / main_index
                     # rt = ratio_sum / main_index
                     pbar.update(len(batch))
@@ -608,15 +608,14 @@ class Trainer(object):
                     #                                                    round(1000 * ged_loss, 3), round(1000 * ce_loss, 3), round(rt, 3),
                     #                                                    index, round(1000 * batch_total_loss / len(batch), 3)))
                     pbar.set_description(
-                        "Epoch_{}: loss={}|GEDloss={}|REGloss={} - Batch_{}: loss={}".format(self.cur_epoch + 1, round(1000 * loss, 3),
-                                                                        round(1000 * ged_loss, 3), round(1000 * reg_loss, 3),
+                        "Epoch_{}: loss={} - Batch_{}: loss={}".format(self.cur_epoch + 1, round(1000 * loss, 3),
                                                                        index, round(1000 * batch_total_loss / len(batch), 3)))
                 tqdm.write("Epoch {}: loss={}".format(self.cur_epoch + 1, round(1000 * loss, 3)))
                 training_loss = round(1000 * loss, 3)
-                training_loss2 = round(1000 * ged_loss, 3)
+                # training_loss2 = round(1000 * ged_loss, 3)
                 # training_loss3 = round(1000 * ce_loss, 3)
                 # training_arg = round(rt, 3)
-                training_loss4 = round(1000 * reg_loss, 3)
+                # training_loss4 = round(1000 * reg_loss, 3)
         t2 = time.time()
         training_time = t2 - t1
         if len(self.values) > 0:
@@ -629,10 +628,10 @@ class Trainer(object):
         #     (self.args.model_name, self.args.dataset, "train", self.cur_epoch + 1, training_time, training_loss, training_loss2, training_loss3, training_arg))
         # format_str = "{:<15}{:<10}{:<12}{:<18}{:<25}{:<25}{:<12}{:<12}{:<10}"
         self.results.append(
-            ('model_name', 'dataset', 'graph_set', "current_epoch", "training_time(s/epoch)", "training_loss(1000x)", "GED_loss", "REG_loss"))
+            ('model_name', 'dataset', 'graph_set', "current_epoch", "training_time(s/epoch)", "training_loss(1000x)"))
         self.results.append(
-            (self.args.model_name, self.args.dataset, "train", self.cur_epoch + 1, training_time, training_loss, training_loss2, training_loss4))
-        format_str = "{:<15}{:<10}{:<12}{:<18}{:<25}{:<25}{:<12}{:<12}"
+            (self.args.model_name, self.args.dataset, "train", self.cur_epoch + 1, training_time, training_loss))
+        format_str = "{:<15}{:<10}{:<12}{:<18}{:<25}{:<25}"
         print(format_str.format(*self.results[-2]))
         print(format_str.format(*self.results[-1]))
         with open(self.args.abs_path + self.args.result_path + self.result_filename, 'a') as f:
@@ -694,6 +693,7 @@ class Trainer(object):
                 target, gt_ged = data["target"].item(), data["ged"]
                 model_out = self.model(data) if test_k == 0 else self.test_matching(data, test_k)
                 prediction, pre_ged, _, = model_out
+                # prediction, pre_ged, _, _ = model_out
                 # prediction, pre_ged, _, _, _ = model_out
                 round_pre_ged = round(pre_ged)  # 四舍五入到个位数
 

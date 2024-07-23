@@ -3,7 +3,8 @@ git status
 git add
 git commit
 git push origin master
-
+nvidia-smi  # 查看显卡信息
+htop  # cpu情况 
 
 python src/main.py --model-epoch-start 0 --model-epoch-end 2 --model-train 1 --demo
 python src/main.py --model-epoch-start 0 --model-epoch-end 20 --model-train 1
@@ -21,4 +22,9 @@ python src/main.py --model-name MyGNN3 --model-epoch-start 0 --model-epoch-end 1
 
 nohup python src/main.py --model-epoch-start 0 --model-epoch-end 2 --model-train 1 --demo > log/demo.log 2>&1 &
 
+nohup python src/main.py --model-name MyGNN3 --model-epoch-start 0 --model-epoch-end 10 --model-train 1 > log/demo.log 2>&1 &
+nohup python src/main.py --model-name GedGNN --model-epoch-start 0 --model-epoch-end 20 --model-train 1 > log/demo.log 2>&1 &
+nohup python src/main.py --model-name MyGNN2 --model-epoch-start 0 --model-epoch-end 20 --model-train 1 > log/demo.log 2>&1 &
 
+
+642720

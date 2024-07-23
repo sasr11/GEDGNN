@@ -17,8 +17,10 @@ GedGNN、myGNN、MyGNN2切换要改的地方
                 第38行设备选择看具体空闲GPU
     GedMatrix.py 第140行的x加上.to(d)
     layers.py 第187行
-    LRL() mask.to(d)
-    Cross() mask.to(d)
+    LRL()     mask.to(self.device)
+    Cross()    mask.to(self.device)
+    AReg()       batch_1.to(self.device)
+    process_batch()    GED_losses.to(self.device)
 ==============================================================
 1、模型的定义
 class GedGNN(torch.nn.Module):
