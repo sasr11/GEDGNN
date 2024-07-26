@@ -24,6 +24,8 @@ class AttentionModule(torch.nn.Module):
         """
         self.weight_matrix = torch.nn.Parameter(torch.Tensor(self.args.filters_3,
                                                              self.args.filters_3))
+        # self.weight_matrix = torch.nn.Parameter(torch.Tensor(224,
+        #                                                      224))  # zhj
 
     def init_parameters(self):
         """
@@ -55,6 +57,7 @@ class TensorNetworkModule(torch.nn.Module):
         super(TensorNetworkModule, self).__init__()
         self.args = args
         self.input_dim = self.args.filters_3 if (input_dim is None) else input_dim
+        # self.input_dim = 224 if (input_dim is None) else input_dim  # zhj
         self.setup_weights()
         self.init_parameters()
 

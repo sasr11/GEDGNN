@@ -177,7 +177,7 @@ class Trainer(object):
                     else: # "exp"
                         losses = losses + F.relu(prediction - target)
         elif self.args.model_name == "MyGNN3":
-            GED_weight = 1.0  # 10.0  self.args.loss_weight
+            GED_weight = 10.0  # 10.0  self.args.loss_weight
             # CE_weight = 10.0  # 0.07  1.0  0.2  0.5
             # reg_weight = 1.0
             count = 1
@@ -431,42 +431,42 @@ class Trainer(object):
                 li.append(i)
         
         """生成验证图对"""
-        for i in range(train_num, val_num):
-            if self.gn[i] <= 10:
-                random.shuffle(li)
-                self.val_graphs.append((0, i, li[:self.args.num_testing_graphs]))
-            elif dg[i] is not None:
-                k = len(dg[i])
-                self.val_graphs.append((1, i, list(range(k))))
+        # for i in range(train_num, val_num):
+        #     if self.gn[i] <= 10:
+        #         random.shuffle(li)
+        #         self.val_graphs.append((0, i, li[:self.args.num_testing_graphs]))
+        #     elif dg[i] is not None:
+        #         k = len(dg[i])
+        #         self.val_graphs.append((1, i, list(range(k))))
 
         """生成测试图对"""
         # 测试集140张图与随机打乱顺序的训练集前100张图
         for i in range(val_num, test_num):
             if self.gn[i] <= 10:
                 random.shuffle(li)
-                self.testing_graphs.append((0, i, li[:self.args.num_testing_graphs]))
+                self.testing_graphs.append((0, i, li[:self.args.num_testing_graphs]))  
             elif dg[i] is not None:
                 k = len(dg[i])
                 self.testing_graphs.append((1, i, list(range(k))))
                 
-        li = []  # 测试集图id列表，用于后续测试集2的生成
-        for i in range(val_num, test_num):
-            if self.gn[i] <= 10:
-                li.append(i)
+        # li = []  # 测试集图id列表，用于后续测试集2的生成
+        # for i in range(val_num, test_num):
+        #     if self.gn[i] <= 10:
+        #         li.append(i)
 
         # 测试集140张图与随机打乱顺序的测试集前100张图
-        for i in range(val_num, test_num):
-            if self.gn[i] <= 10:
-                random.shuffle(li)
-                self.testing2_graphs.append((0, i, li[:self.args.num_testing_graphs]))
-            elif dg[i] is not None:
-                k = len(dg[i])
-                self.testing2_graphs.append((1, i, list(range(k))))
+        # for i in range(val_num, test_num):
+        #     if self.gn[i] <= 10:
+        #         random.shuffle(li)
+        #         self.testing2_graphs.append((0, i, li[:self.args.num_testing_graphs]))
+        #     elif dg[i] is not None:
+        #         k = len(dg[i])
+        #         self.testing2_graphs.append((1, i, list(range(k))))
 
         print("Generate {} training graph pairs.".format(len(self.training_graphs)))
-        print("Generate {} * {} val graph pairs.".format(len(self.val_graphs), self.args.num_testing_graphs))
+        # print("Generate {} * {} val graph pairs.".format(len(self.val_graphs), self.args.num_testing_graphs))
         print("Generate {} * {} testing graph pairs.".format(len(self.testing_graphs), self.args.num_testing_graphs))
-        print("Generate {} * {} testing2 graph pairs.".format(len(self.testing2_graphs), self.args.num_testing_graphs))
+        # print("Generate {} * {} testing2 graph pairs.".format(len(self.testing2_graphs), self.args.num_testing_graphs))
 
     def create_batches(self):
         """

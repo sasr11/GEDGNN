@@ -192,7 +192,27 @@ x实验22：result_MyGNN2_AIDS_2405101721.txt（对齐算法错误，在修改�
     日期：24-07-19 17:11
     数据集：AIDS，测试图对140*100
     说明：节点嵌入通过LRL处理节点嵌入, 通过Cross生成Cost矩阵, 用Cost矩阵通过gs得到Alignment矩阵 
-实验38：
+实验38：result_MyGNN3_AIDS_2407231500
+    日期：24-07-23 15:00
+    数据集：AIDS，测试图对140*100
+    参数：costMatrix(k=16)、LRL(hiddim=32)
+    说明：在实验20的基础上，使用多层拼接的节点嵌入(128+64+32=224)
+实验39：result_MyGNN3_AIDS_2407251335
+    日期：24-07-25 13:35
+    数据集：AIDS，测试图对140*420
+    参数：costMatrix(k=16)、LRL(hiddim=32)
+    说明：在实验20的基础上，使用完整的测试数据集
+实验40：result_MyGNN3_AIDS_2407261038
+    日期：24-07-26 10:38
+    数据集：AIDS，测试图对140*100
+    参数：costMatrix(k=16)、LRL(hiddim=32)
+    说明：在实验20的基础上，score的计算方式: sigmoid(score + sim_score) 
+                                        -> alpha*sigmoid(score) + beta*sigmoid(sim_score) 
+实验41：result_MyGNN3_AIDS_2407261217
+    日期：24-07-26 12:17
+    数据集：AIDS，测试图对140*100
+    参数：costMatrix(k=16)、LRL(hiddim=32)
+    说明：重新进行一次实验20 (Cross和LRL换种写法，思路和参数都没变，想看看是否有影响)
 
        2  3  4  5  6  7  8  9  10   均值
 0.8    1  2  3  4  4  5  6  7  8    0.714       
@@ -215,5 +235,5 @@ x实验22：result_MyGNN2_AIDS_2405101721.txt（对齐算法错误，在修改�
         图1id，图2id，图1节点数，gt_ged, 图2节点数，实际节点对齐数量
 实验结果2：sample_MyGNN_AIDS_2403201912.txt
     日期：24-03-20 19:12
-    数据集：AIDS，测试图对140*100
+    数据集：AIDS，测试图对140*420
     备注：每个batch的第一个图对的预测对齐结果和ground-truth

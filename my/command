@@ -27,4 +27,3 @@ nohup python src/main.py --model-name GedGNN --model-epoch-start 0 --model-epoch
 nohup python src/main.py --model-name MyGNN2 --model-epoch-start 0 --model-epoch-end 20 --model-train 1 > log/demo.log 2>&1 &
 
 
-642720
