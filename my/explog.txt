@@ -192,27 +192,51 @@ x实验22：result_MyGNN2_AIDS_2405101721.txt（对齐算法错误，在修改�
     日期：24-07-19 17:11
     数据集：AIDS，测试图对140*100
     说明：节点嵌入通过LRL处理节点嵌入, 通过Cross生成Cost矩阵, 用Cost矩阵通过gs得到Alignment矩阵 
-实验38：result_MyGNN3_AIDS_2407231500
+**实验38：result_MyGNN3_AIDS_2407231500
     日期：24-07-23 15:00
     数据集：AIDS，测试图对140*100
-    参数：costMatrix(k=16)、LRL(hiddim=32)
+    参数：costMatrix(k=16)、LRL(hiddim=64)
     说明：在实验20的基础上，使用多层拼接的节点嵌入(128+64+32=224)
 实验39：result_MyGNN3_AIDS_2407251335
     日期：24-07-25 13:35
     数据集：AIDS，测试图对140*420
-    参数：costMatrix(k=16)、LRL(hiddim=32)
+    参数：costMatrix(k=16)、LRL(hiddim=64)
     说明：在实验20的基础上，使用完整的测试数据集
 实验40：result_MyGNN3_AIDS_2407261038
     日期：24-07-26 10:38
     数据集：AIDS，测试图对140*100
-    参数：costMatrix(k=16)、LRL(hiddim=32)
+    参数：costMatrix(k=16)、LRL(hiddim=64)
     说明：在实验20的基础上，score的计算方式: sigmoid(score + sim_score) 
                                         -> alpha*sigmoid(score) + beta*sigmoid(sim_score) 
 实验41：result_MyGNN3_AIDS_2407261217
     日期：24-07-26 12:17
     数据集：AIDS，测试图对140*100
-    参数：costMatrix(k=16)、LRL(hiddim=32)
+    参数：costMatrix(k=16)、LRL(hiddim=64)
     说明：重新进行一次实验20 (Cross和LRL换种写法，思路和参数都没变，想看看是否有影响)
+实验42：result_MyGNN3_AIDS_2408121047
+    日期：24-08-12 10:47
+    数据集：AIDS，测试图对140*420
+    参数：costMatrix(k=16)、LRL(hiddim=64)
+    说明：重新进行一次实验39，跑25轮
+实验43：result_MyGNN3_AIDS_2408131631
+    日期：24-08-13 16:31
+    数据集：AIDS，测试图对140*100
+    参数：costMatrix(k=16)、LRL(hiddim=64)
+    说明：重新进行一次实验37，跑25轮, 使用多层拼接的节点嵌入(128+64+32=224)
+
+
+
+LRL-hiddim    costMatrix-k    init-features     cat-features     轮次   mae     p10     acc     rho     tau   
+64            16              \                 224=128+64+32    20    0.840   0.717   0.377   0.869   0.739
+
+                                                            baseline   0.773   0.716   0.397   0.876   0.751
+
+
+问题：
+1、把Cross模块的代码简化后，使用cat-features会导致loss异常不下降，维持在2000以上
+    哪怕用来原来的Cross模块，使用cat-features也有概率会导致loss异常不下降。
+    可能是参数过多，导致模型不稳定，梯度消失\梯度爆炸。
+
 
        2  3  4  5  6  7  8  9  10   均值
 0.8    1  2  3  4  4  5  6  7  8    0.714       

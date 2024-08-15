@@ -180,14 +180,11 @@ class Trainer(object):
             GED_weight = 10.0  # 10.0  self.args.loss_weight
             # CE_weight = 10.0  # 0.07  1.0  0.2  0.5
             # reg_weight = 1.0
-            count = 1
             # GED_losses = torch.tensor([0]).float().to(self.device)
             # CE_losses = torch.tensor([0]).float()
             # ratio_sum = 0
             # reg_losses = torch.tensor([0]).float().to(self.device)
             for graph_pair in batch:
-                # print("count =", count)  # zhj
-                count += 1
                 data = self.pack_graph_pair(graph_pair)
                 target, gt_mapping = data["target"], data["mapping"]
                 # prediction, _, matrix, pseudo_matrix, ratio= self.model(data)
@@ -281,7 +278,7 @@ class Trainer(object):
             # A = torch.sparse_coo_tensor(edge, torch.ones(edge.shape[1]), (g['n'], g['n'])).to_dense().to(self.device)
             # self.A.append(A)
 
-        self.features = [torch.tensor(x).float().to(self.device) for x in self.features]
+        self.features = [torch.tensor(x).float().to(self.device) for x in self.features]  # 初始化one-hot向量
         print("Feature shape of 1st graph:", self.features[0].shape)
 
         n = len(self.graphs)
@@ -444,7 +441,7 @@ class Trainer(object):
         for i in range(val_num, test_num):
             if self.gn[i] <= 10:
                 random.shuffle(li)
-                self.testing_graphs.append((0, i, li[:self.args.num_testing_graphs]))  
+                self.testing_graphs.append((0, i, li[:self.args.num_testing_graphs]))  # self.args.num_testing_graphs
             elif dg[i] is not None:
                 k = len(dg[i])
                 self.testing_graphs.append((1, i, list(range(k))))
@@ -465,7 +462,7 @@ class Trainer(object):
 
         print("Generate {} training graph pairs.".format(len(self.training_graphs)))
         # print("Generate {} * {} val graph pairs.".format(len(self.val_graphs), self.args.num_testing_graphs))
-        print("Generate {} * {} testing graph pairs.".format(len(self.testing_graphs), self.args.num_testing_graphs))
+        print("Generate {} * {} testing graph pairs.".format(len(self.testing_graphs), self.args.num_testing_graphs))  # 
         # print("Generate {} * {} testing2 graph pairs.".format(len(self.testing2_graphs), self.args.num_testing_graphs))
 
     def create_batches(self):

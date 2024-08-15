@@ -1127,7 +1127,7 @@ class MyGNN3(torch.nn.Module):
             self.convolution_3 = GCNConv(self.args.filters_2, self.args.filters_3)
         elif self.args.gnn_operator == 'gin':
             nn1 = torch.nn.Sequential(
-                torch.nn.Linear(self.number_labels, self.args.filters_1),
+                torch.nn.Linear(self.number_labels, self.args.filters_1),  # self.number_labels
                 torch.nn.ReLU(),
                 torch.nn.Linear(self.args.filters_1, self.args.filters_1),
                 torch.nn.BatchNorm1d(self.args.filters_1, track_running_stats=False))
@@ -1151,7 +1151,7 @@ class MyGNN3(torch.nn.Module):
             raise NotImplementedError('Unknown GNN-Operator.')
 
         # self.mapMatrix = GedMatrixModule(self.args.filters_3, self.args.hidden_dim)
-        self.costMatrix = GedMatrixModule(self.args.filters_3, self.args.hidden_dim)
+        self.costMatrix = GedMatrixModule(224, self.args.hidden_dim)  # self.args.filters_3  cat
 
         # bias
         self.attention = AttentionModule(self.args)
@@ -1165,12 +1165,15 @@ class MyGNN3(torch.nn.Module):
         self.scoring_layer = torch.nn.Linear(self.args.bottle_neck_neurons_3, 1)
         
         # LRL模块
-        self.transform1 = torch.nn.Linear(self.args.filters_3, 64)
+        self.transform1 = torch.nn.Linear(224, 64)  # self.args.filters_3  cat
         self.relu1 = torch.nn.ReLU()
         self.transform2 = torch.nn.Linear(64, 64)
         
-        self.alpha = torch.nn.Parameter(torch.Tensor(1))
-        self.beta = torch.nn.Parameter(torch.Tensor(1))
+        # one-hot初始化
+        self.embedding = torch.nn.Linear(self.number_labels, self.args.filters_1)
+        
+        # self.alpha = torch.nn.Parameter(torch.Tensor(1))
+        # self.beta = torch.nn.Parameter(torch.Tensor(1))
         
         # 
         # self.transform = torch.nn.Linear(self.args.filters_3, self.number_labels)  # 32->29
@@ -1262,19 +1265,38 @@ class MyGNN3(torch.nn.Module):
         n2 = abstract_features_2.shape[0]
         max_size = max(n1, n2)
         # LRL
-        emb_1 = self.transform2(self.relu1(self.transform1(abstract_features_1)))  # [max_size, 64]
-        emb_2 = self.transform2(self.relu1(self.transform1(abstract_features_2)))  # [max_size, 64]
+        emb_1 = self.transform2(self.relu1(self.transform1(abstract_features_1)))  # [n1, 64]
+        emb_2 = self.transform2(self.relu1(self.transform1(abstract_features_2)))  # [n2, 64]
         sinkhorn_input = torch.matmul(emb_1, emb_2.permute(1,0))  # [n1, n2]
         # 填充
         sinkhorn_input = F.pad(sinkhorn_input, pad=(0, max_size-n2, 0, max_size-n1))  # [max_size, max_size], 左右上下
         # 虽然在上面mask掉了填充部分，但经过gumbel后，mask的部分仍会有值，需要A_match方面进行mask
         return sinkhorn_input
     
+    # def Cross(self, abstract_features_1, abstract_features_2):
+    #     """通过嵌入计算相似度矩阵
+    #     Args:
+    #         abstract_features_1 (_type_): 图1嵌入 [n1, 32]
+    #         abstract_features_2 (_type_): 图2嵌入 [n2, 32]
+    #         flag (_type_): 节点嵌入 or 边嵌入
+    #     Returns:
+    #         _type_: 相似度矩阵(通过mask消除填充向量的影响, 同时因为之后会和置换矩阵相乘, 置换矩阵不用再mask)
+    #         取值范围(-无穷，+无穷)
+    #     """
+    #     n1 = abstract_features_1.shape[0]
+    #     n2 = abstract_features_2.shape[0]
+    #     max_size = max(n1, n2)
+    #     # 填充
+    #     m = self.costMatrix(abstract_features_1, abstract_features_2)  # [n1, n2]
+    #     cost_matrix = F.pad(m, pad=(0,max_size-n2,0,max_size-n1))  # [max_size, max_size]
+        
+    #     return cost_matrix
+    
     def Cross(self, abstract_features_1, abstract_features_2):
         """通过嵌入计算相似度矩阵
         Args:
             abstract_features_1 (_type_): 图1嵌入 [n1, 32]
-            abstract_features_2 (_type_): 图2嵌入 [n2, 32]
+            abstract_features_2 (_type_): 图2嵌入 [n1, 32]
             flag (_type_): 节点嵌入 or 边嵌入
         Returns:
             _type_: 相似度矩阵(通过mask消除填充向量的影响, 同时因为之后会和置换矩阵相乘, 置换矩阵不用再mask)
@@ -1284,11 +1306,15 @@ class MyGNN3(torch.nn.Module):
         n2 = abstract_features_2.shape[0]
         max_size = max(n1, n2)
         # 填充
-        m = self.costMatrix(abstract_features_1, abstract_features_2)  # [n1, n2]
-        cost_matrix = F.pad(m, pad=(0,max_size-n2,0,max_size-n1))  # [max_size, max_size]
+        abstract_features_1 = F.pad(abstract_features_1, pad=(0,0,0,max_size-n1))  # [max_size, 32]
+        abstract_features_2 = F.pad(abstract_features_2, pad=(0,0,0,max_size-n2))  # [max_size, 32]
+        # 交互
+        m = self.costMatrix(abstract_features_1, abstract_features_2)  # [max_size, max_size]
+        # mask
+        mask = torch.cat((torch.tensor([1]).repeat(n1,1).repeat(1,max_size), torch.tensor([0]).repeat(max_size-n1,1).repeat(1,max_size))).to(self.device)  # [max_size, max_size]
+        return torch.mul(mask, m)
         
-        return cost_matrix
-    
+
     def generate_pseudo_graph(self, LRL_map_matrix, node_alignment, features_1, features_2):
         """根据节点相似度矩阵和节点对齐结果交换图1和图2中相似度前60%节点的特征或嵌入
 
@@ -1516,10 +1542,12 @@ class MyGNN3(torch.nn.Module):
         edge_index_2 = data["edge_index_2"]  # (torch.Tensor)2*m
         features_1 = data["features_1"]  # (torch.Tensor)n*29
         features_2 = data["features_2"]  # (torch.Tensor)m*29
+        # features_1 = self.embedding(features_1)
+        # features_2 = self.embedding(features_2)
         
         # 计算节点嵌入
-        abstract_features_1 = self.convolutional_pass(edge_index_1, features_1)  # [n1, 224]
-        abstract_features_2 = self.convolutional_pass(edge_index_2, features_2)  # [n2, 224]
+        abstract_features_1 = self.convolutional_pass_2(edge_index_1, features_1)  # [n1, 224]
+        abstract_features_2 = self.convolutional_pass_2(edge_index_2, features_2)  # [n2, 224]
         
         # cost_matrix, node_alignment = self.LRL_Cross(abstract_features_1, abstract_features_2)
         
