@@ -54,11 +54,6 @@ def parameter_parser():
                         default=16,
 	                help="Similarity score bins. Default is 16.")
 
-    parser.add_argument("--hidden-dim",
-                        type=int,
-                        default=16,
-                        help="the size of weight matrix in GedMatrixModule. Default is 16.")
-
     parser.add_argument("--histogram",
                         dest="histogram",
                         default=False,
@@ -183,5 +178,21 @@ def parameter_parser():
                         type=float,
                         default=1.0,
                         help="In GedGNN, the weight of value loss. Default is 1.0.")
+    
+    parser.add_argument("--hidden-dim",
+                        type=int,
+                        default=16,
+                        help="the size of weight matrix in GedMatrixModule. Default is 16.")
 
+    parser.add_argument("--lrl-hiddim",
+                        type=int,
+                        default=64)
+    
+    parser.add_argument("--init-features",
+                        type=int,
+                        default=32)
+    
+    parser.add_argument("--final-features",
+                        type=int,
+                        default=32)
     return parser.parse_args()

@@ -1147,11 +1147,12 @@ class MyGNN3(torch.nn.Module):
             self.convolution_1 = GINConv(nn1, train_eps=True)
             self.convolution_2 = GINConv(nn2, train_eps=True)
             self.convolution_3 = GINConv(nn3, train_eps=True)
+            self.compress = torch.nn.Linear(224, self.args.final_features)
         else:
             raise NotImplementedError('Unknown GNN-Operator.')
 
         # self.mapMatrix = GedMatrixModule(self.args.filters_3, self.args.hidden_dim)
-        self.costMatrix = GedMatrixModule(224, self.args.hidden_dim)  # self.args.filters_3  cat
+        self.costMatrix = GedMatrixModule(self.args.final_features, self.args.hidden_dim)  # self.args.filters_3  cat
 
         # bias
         self.attention = AttentionModule(self.args)
@@ -1165,12 +1166,12 @@ class MyGNN3(torch.nn.Module):
         self.scoring_layer = torch.nn.Linear(self.args.bottle_neck_neurons_3, 1)
         
         # LRL模块
-        self.transform1 = torch.nn.Linear(224, 64)  # self.args.filters_3  cat
+        self.transform1 = torch.nn.Linear(self.args.final_features, self.args.lrl_hiddim)  # self.args.filters_3  cat
         self.relu1 = torch.nn.ReLU()
-        self.transform2 = torch.nn.Linear(64, 64)
+        self.transform2 = torch.nn.Linear(self.args.lrl_hiddim, self.args.lrl_hiddim)
         
         # one-hot初始化
-        self.embedding = torch.nn.Linear(self.number_labels, self.args.filters_1)
+        self.embedding = torch.nn.Linear(self.number_labels, self.args.init_features)
         
         # self.alpha = torch.nn.Parameter(torch.Tensor(1))
         # self.beta = torch.nn.Parameter(torch.Tensor(1))
@@ -1230,6 +1231,7 @@ class MyGNN3(torch.nn.Module):
                                                p=self.args.dropout,
                                                training=self.training)  # [n, 64]
         cat_features = torch.cat((cat_features, features_3), dim = 1)  # [n, 224]
+        cat_features = self.compress(cat_features)  # [n, 32]
         return cat_features
 
     def get_bias_value(self, abstract_features_1, abstract_features_2):
