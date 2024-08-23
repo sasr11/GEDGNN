@@ -181,7 +181,7 @@ def parameter_parser():
     
     parser.add_argument("--hidden-dim",
                         type=int,
-                        default=16,
+                        default=8,
                         help="the size of weight matrix in GedMatrixModule. Default is 16.")
 
     parser.add_argument("--lrl-hiddim",

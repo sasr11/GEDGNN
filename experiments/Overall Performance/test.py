@@ -571,12 +571,24 @@ def func_1():
     print(transform1(N2))
 
 if __name__ == "__main__":
-    a, b = torch.tensor([0.5]), torch.tensor([0.8])
-    print(torch.sigmoid(a+b))
-    print((torch.sigmoid(a)+torch.sigmoid(b))/2)
+    # a, b = torch.tensor([0.5]), torch.tensor([0.8])
+    # print(torch.sigmoid(a+b))
+    # print((torch.sigmoid(a)+torch.sigmoid(b))/2)
+    x = torch.tensor([[0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+                  [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+                  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], 
+                  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], 
+                  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], ])
+    e1 = nn.Embedding(29, 6)
+    e2 = nn.Embedding(29, 6)
+    indices = torch.argmax(x, dim=1)
+    f1 = e1(indices)
+    f2 = e2(indices)
+    print(f1)
+    print(f2)
     pass
 
-
+    
 
 
 

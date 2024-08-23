@@ -1127,7 +1127,7 @@ class MyGNN3(torch.nn.Module):
             self.convolution_3 = GCNConv(self.args.filters_2, self.args.filters_3)
         elif self.args.gnn_operator == 'gin':
             nn1 = torch.nn.Sequential(
-                torch.nn.Linear(self.number_labels, self.args.filters_1),  # self.number_labels
+                torch.nn.Linear(self.args.init_features, self.args.filters_1),  # self.number_labels
                 torch.nn.ReLU(),
                 torch.nn.Linear(self.args.filters_1, self.args.filters_1),
                 torch.nn.BatchNorm1d(self.args.filters_1, track_running_stats=False))
@@ -1544,8 +1544,8 @@ class MyGNN3(torch.nn.Module):
         edge_index_2 = data["edge_index_2"]  # (torch.Tensor)2*m
         features_1 = data["features_1"]  # (torch.Tensor)n*29
         features_2 = data["features_2"]  # (torch.Tensor)m*29
-        # features_1 = self.embedding(features_1)
-        # features_2 = self.embedding(features_2)
+        features_1 = self.embedding(features_1)
+        features_2 = self.embedding(features_2)
         
         # 计算节点嵌入
         abstract_features_1 = self.convolutional_pass_2(edge_index_1, features_1)  # [n1, 224]
