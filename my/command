@@ -19,6 +19,9 @@ python src/main.py --model-name MyGNN2 --model-epoch-start 0 --model-epoch-end 2
 
 python src/main.py --model-name MyGNN3 --model-epoch-start 0 --model-epoch-end 2 --model-train 1 --demo
 python src/main.py --model-name MyGNN3 --model-epoch-start 0 --model-epoch-end 25 --model-train 1
+python src/main.py --model-name MyGNN3 --dataset Linux --model-epoch-start 0 --model-epoch-end 25 --model-train 1
+python src/main.py --model-name MyGNN3 --dataset IMDB --model-epoch-start 0 --model-epoch-end 25 --model-train 1
+
 
 nohup python src/main.py --model-epoch-start 0 --model-epoch-end 2 --model-train 1 --demo > log/demo.log 2>&1 &
 

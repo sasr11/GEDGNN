@@ -47,7 +47,7 @@ class Trainer(object):
         self.use_gpu = torch.cuda.is_available()
         # self.use_gpu = False
         print("use_gpu =", self.use_gpu)
-        self.device = torch.device('cuda:1') if self.use_gpu else torch.device('cpu')
+        self.device = torch.device('cuda:0') if self.use_gpu else torch.device('cpu')
 
         self.load_data()
         self.transfer_data_to_torch()
@@ -319,7 +319,7 @@ class Trainer(object):
     def delta_graph(g, f, device):
         new_data = dict()
 
-        n = g['n']
+        n = g['n']  # 节点数
         permute = list(range(n))
         random.shuffle(permute)
         mapping = torch.sparse_coo_tensor((list(range(n)), permute), [1.0] * n, (n, n)).to_dense().to(device)
@@ -370,15 +370,15 @@ class Trainer(object):
         return new_data
 
     def gen_delta_graphs(self):
-        k = self.args.num_delta_graphs
-        n = len(self.graphs)
+        k = self.args.num_delta_graphs  # 100
+        n = len(self.graphs)  # IMDB 1500
         for i, g in enumerate(self.graphs):
             # Do not generate delta graphs for small graphs.
             if g['n'] <= 10:
                 continue
             # gen k delta graphs
             f = self.features[i]
-            self.delta_graphs[i] = [delta_graph(g, f, self.device) for j in range(k)]
+            self.delta_graphs[i] = [self.delta_graph(g, f, self.device) for j in range(k)]
 
     def check_pair(self, i, j):
         if i == j:
@@ -412,12 +412,12 @@ class Trainer(object):
         assert self.args.graph_pair_mode == "combine"
         dg = self.delta_graphs
         for i in range(train_num):  # 遍历所有训练集中的图
-            if self.gn[i] <= 10:  # 如果是小图
+            if self.gn[i] <= 10:  # 如果是小图  501/900
                 for j in range(i, train_num):
                     tmp = self.check_pair(i, j)
                     if tmp is not None:  # 如果是同一张图或图对存在
                         self.training_graphs.append(tmp)
-            elif dg[i] is not None:
+            elif dg[i] is not None:  
                 k = len(dg[i])
                 for j in range(k):
                     self.training_graphs.append((1, i, j))
