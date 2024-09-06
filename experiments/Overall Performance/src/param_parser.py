@@ -186,13 +186,21 @@ def parameter_parser():
 
     parser.add_argument("--lrl-hiddim",
                         type=int,
-                        default=64)
+                        default=64,
+                        help="the size of Linear-ReLu-Linear Module. Default is 64.")
     
     parser.add_argument("--init-features",
                         type=int,
-                        default=32)
+                        default=32,
+                        help="the size of the initialized vector. Default is 32.")
     
     parser.add_argument("--final-features",
                         type=int,
-                        default=32)
+                        default=32,
+                        help="the size of the vector ultimately output by GNN. Default is 32.")
+    
+    parser.add_argument("--readout",
+                        type=str,
+                        default='mean',
+                        help="the method for obtaining graph level embeddings from node embeddings, including [mean, max].")
     return parser.parse_args()

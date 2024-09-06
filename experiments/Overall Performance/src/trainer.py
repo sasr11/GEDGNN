@@ -16,7 +16,7 @@ from kbest_matching_with_lb import KBestMSolver
 from math import exp
 from scipy.stats import spearmanr, kendalltau
 
-from models import GPN, SimGNN, GedGNN, TaGSim, MyGNN, MyGNN2, MyGNN3
+from models import GPN, SimGNN, GedGNN, TaGSim, MyGNN3, GOTSim
 from GedMatrix import fixed_mapping_loss
 
 
@@ -37,13 +37,8 @@ class Trainer(object):
         # my
         now = datetime.now().strftime('%y%m%d%H%M')
         self.result_filename = 'result' + '_' + args.model_name + '_' + args.dataset + '_' + now + '.txt'
-        # self.match_result = 'match' + '_' + args.model_name + '_' + args.dataset + '_' + now + '.txt'
-        # self.sample_store = 'sample' + '_' + args.model_name + '_' + args.dataset + '_' + now + '.txt'
         print("result_filename =", self.result_filename)  # 存放训练结果和测试结果
-        # print("match_result =", self.match_result)  # 存放每个图对的一对一匹配结果
-        # print("sample_store =", self.sample_store)  # 存放每个batch第一个图对的预测对齐结果和真实对齐结果
         
-
         self.use_gpu = torch.cuda.is_available()
         # self.use_gpu = False
         print("use_gpu =", self.use_gpu)
@@ -78,20 +73,6 @@ class Trainer(object):
         elif self.args.model_name == "TaGSim":
             self.args.target_mode = 'exp'
             self.model = TaGSim(self.args, self.number_of_labels).to(self.device)
-        elif self.args.model_name == "MyGNN":
-            if self.args.dataset in ["AIDS", "Linux"]:
-                self.args.loss_weight = 10.0
-            else:
-                self.args.loss_weight = 1.0
-            self.args.gtmap = True
-            self.model = MyGNN(self.args, self.number_of_labels).to(self.device)
-        elif self.args.model_name == "MyGNN2":
-            if self.args.dataset in ["AIDS", "Linux"]:
-                self.args.loss_weight = 10.0
-            else:
-                self.args.loss_weight = 1.0
-            self.args.gtmap = True
-            self.model = MyGNN2(self.args, self.number_of_labels).to(self.device)
         elif self.args.model_name == "MyGNN3":
             if self.args.dataset in ["AIDS", "Linux"]:
                 self.args.loss_weight = 10.0
@@ -99,6 +80,13 @@ class Trainer(object):
                 self.args.loss_weight = 1.0
             self.args.gtmap = True
             self.model = MyGNN3(self.args, self.number_of_labels).to(self.device)
+        elif self.args.model_name == "GOTSim":
+            if self.args.dataset in ["AIDS", "Linux"]:
+                self.args.loss_weight = 10.0
+            else:
+                self.args.loss_weight = 1.0
+            self.args.gtmap = True
+            self.model = GOTSim(self.args, self.number_of_labels).to(self.device)
         else:
             assert False
 
@@ -137,76 +125,26 @@ class Trainer(object):
                 ta_ged = data["ta_ged"]
                 prediction, _ = self.model(data)
                 losses = losses + torch.nn.functional.mse_loss(ta_ged, prediction)
-        elif self.args.model_name == "MyGNN":
-            weight = self.args.loss_weight
-            # flag = True
-            for graph_pair in batch:
-                data = self.pack_graph_pair(graph_pair)
-                target, gt_mapping = data["target"], data["mapping"]
-                prediction, _, mapping, masked_index = self.model(data)
-                mapping = my_alignment(masked_index, mapping)
-                # 有BCE Loss
-                BCE_loss = fixed_mapping_loss(mapping, gt_mapping)
-                losses = losses + BCE_loss + weight * F.mse_loss(target, prediction)
-                if self.args.finetune:
-                    if self.args.target_mode == "linear":
-                        losses = losses + F.relu(target - prediction)
-                    else: # "exp"
-                        losses = losses + F.relu(prediction - target)
-                # 输出每个batch的第一个mapping和gt_mapping
-                # if flag:
-                #     flag = False
-                #     with open(self.args.abs_path + self.args.result_path + self.sample_store, 'a') as f:
-                #         print(mapping, file=f)
-                #         print(gt_mapping, file=f)
-                #         print("----------------------------------------------------\n", file=f)
-        elif self.args.model_name == "MyGNN2":
-            weight = self.args.loss_weight
-            count = 1
-            for graph_pair in batch:
-                # print("count =", count)  # zhj
-                count += 1
-                data = self.pack_graph_pair(graph_pair)
-                target, gt_mapping = data["target"], data["mapping"]
-                prediction, _, lg_prediction = self.model(data)
-                losses = losses + weight * F.mse_loss(target, prediction) + weight * F.mse_loss(target, lg_prediction)
-                # losses = losses + weight * F.mse_loss(target, prediction)
-                if self.args.finetune:
-                    if self.args.target_mode == "linear":
-                        losses = losses + F.relu(target - prediction)
-                    else: # "exp"
-                        losses = losses + F.relu(prediction - target)
         elif self.args.model_name == "MyGNN3":
             GED_weight = 10.0  # 10.0  self.args.loss_weight
-            # CE_weight = 10.0  # 0.07  1.0  0.2  0.5
-            # reg_weight = 1.0
-            # GED_losses = torch.tensor([0]).float().to(self.device)
-            # CE_losses = torch.tensor([0]).float()
-            # ratio_sum = 0
-            # reg_losses = torch.tensor([0]).float().to(self.device)
             for graph_pair in batch:
                 data = self.pack_graph_pair(graph_pair)
                 target, gt_mapping = data["target"], data["mapping"]
-                # prediction, _, matrix, pseudo_matrix, ratio= self.model(data)
                 prediction, _, _ = self.model(data)
                 GED_loss = GED_weight * F.mse_loss(target, prediction)
-                # reg_loss = reg_weight * loss_reg
-                # CE_loss = CE_weight * F.cross_entropy(matrix, pseudo_matrix, reduction='mean')  # 对行为单位做mean
-                # CE_loss = CE_weight * F.mse_loss(matrix, pseudo_matrix)
-                
-                # print(matrix.shape)
-                # print(matrix)
-                # print(pseudo_matrix)
-                # print(GED_loss, CE_loss)
-                # print("------------------------------------")
-                # time.sleep(1)
-                
-                # losses = losses + GED_loss + CE_loss
                 losses = losses + GED_loss
-                # GED_losses += GED_loss
-                # CE_losses += CE_loss
-                # ratio_sum += ratio
-                # reg_losses += reg_loss
+                if self.args.finetune:
+                    if self.args.target_mode == "linear":
+                        losses = losses + F.relu(target - prediction)
+                    else: # "exp"
+                        losses = losses + F.relu(prediction - target)
+        elif self.args.model_name == "GOTSim":
+            GED_weight = 10.0  # 10.0  self.args.loss_weight
+            for graph_pair in batch:
+                data = self.pack_graph_pair(graph_pair)
+                target, gt_mapping = data["target"], data["mapping"]
+                prediction, _, _ = self.model(data)
+                losses = losses + GED_weight * F.mse_loss(target, prediction)
                 if self.args.finetune:
                     if self.args.target_mode == "linear":
                         losses = losses + F.relu(target - prediction)
@@ -226,7 +164,6 @@ class Trainer(object):
         # time.sleep(10)
                 
         self.optimizer.step()
-        # return losses.item(), GED_losses.item(), CE_losses.item(), ratio_sum
         return losses.item()
                 
     def load_data(self):
@@ -578,32 +515,13 @@ class Trainer(object):
             for epoch in range(self.args.epochs):  # 这里只循环一次（self.args.epochs=1），真正的epoch循环在main函数里
                 batches = self.create_batches()
                 loss_sum = 0
-                # GED_loss_sum = 0
-                # REG_loss_sum = 0
-                # CE_loss_sum = 0
-                # ratio_sum = 0  # 真实的节点交换比例
                 main_index = 0
                 for index, batch in enumerate(batches):
-                    # batch_total_loss, GED_loss, CE_loss, ratio = self.process_batch(batch)  # without average
                     batch_total_loss = self.process_batch(batch)  # without average
-                    # print("\n", index, GED_loss, REG_loss)
-                    # time.sleep(10)
                     loss_sum += batch_total_loss
-                    # GED_loss_sum += GED_loss  #  zhj
-                    # CE_loss_sum += CE_loss  # zhj
-                    # ratio_sum += ratio
-                    # REG_loss_sum += REG_loss
                     main_index += len(batch)
                     loss = loss_sum / main_index  # the average loss of current epoch
-                    # ged_loss = GED_loss_sum / main_index
-                    # reg_loss = REG_loss_sum / main_index
-                    # ce_loss = CE_loss_sum / main_index
-                    # rt = ratio_sum / main_index
                     pbar.update(len(batch))
-                    # pbar.set_description(
-                    #     "Epoch_{}: loss={}|GEDloss={}|CEloss={}|ratio={} - Batch_{}: loss={}".format(self.cur_epoch + 1, round(1000 * loss, 3),
-                    #                                                    round(1000 * ged_loss, 3), round(1000 * ce_loss, 3), round(rt, 3),
-                    #                                                    index, round(1000 * batch_total_loss / len(batch), 3)))
                     pbar.set_description(
                         "Epoch_{}: loss={} - Batch_{}: loss={}".format(self.cur_epoch + 1, round(1000 * loss, 3),
                                                                        index, round(1000 * batch_total_loss / len(batch), 3)))
@@ -618,12 +536,6 @@ class Trainer(object):
         if len(self.values) > 0:
             self.prediction_analysis(self.values, "training_score")
 
-        # 存储结果
-        # self.results.append(
-        #     ('model_name', 'dataset', 'graph_set', "current_epoch", "training_time(s/epoch)", "training_loss(1000x)", "GED_loss", "CE_loss", "ratio"))
-        # self.results.append(
-        #     (self.args.model_name, self.args.dataset, "train", self.cur_epoch + 1, training_time, training_loss, training_loss2, training_loss3, training_arg))
-        # format_str = "{:<15}{:<10}{:<12}{:<18}{:<25}{:<25}{:<12}{:<12}{:<10}"
         self.results.append(
             ('model_name', 'dataset', 'graph_set', "current_epoch", "training_time(s/epoch)", "training_loss(1000x)"))
         self.results.append(
@@ -690,8 +602,6 @@ class Trainer(object):
                 target, gt_ged = data["target"].item(), data["ged"]
                 model_out = self.model(data) if test_k == 0 else self.test_matching(data, test_k)
                 prediction, pre_ged, _, = model_out
-                # prediction, pre_ged, _, _ = model_out
-                # prediction, pre_ged, _, _, _ = model_out
                 round_pre_ged = round(pre_ged)  # 四舍五入到个位数
 
                 num += 1
@@ -711,11 +621,6 @@ class Trainer(object):
                 elif round_pre_ged > gt_ged:
                     num_fea += 1
                 
-                # my
-                # mapping = self.my_alignment(masked_index, mapping)
-                # sum = self.my_match(mapping, data["mapping"])
-                # matching_list.append((data["id_1"], data["id_2"], data["n1"], data["n2"], gt_ged, sum))
-                
             t2 = time.time()
             time_usage.append(t2 - t1)
             rho.append(spearmanr(pre, gt)[0])
@@ -732,12 +637,6 @@ class Trainer(object):
         tau = round(np.mean(tau), 3)
         pk10 = round(np.mean(pk10), 3)
         pk20 = round(np.mean(pk20), 3)
-
-        # my
-        # format_str = "{:<10}{:<10}{:<10}{:<10}{:<10}{:<10}"
-        # with open(self.args.abs_path + self.args.result_path + self.match_result, 'a') as f:
-        #     for i in matching_list:
-        #         print(format_str.format(*i), file=f)
         
         # 输出结果
         self.results.append(('model_name', 'dataset', 'graph_set', '#testing_pairs', 'time_usage(s/100p)', 'mse', 'mae', 'acc',

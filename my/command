@@ -6,30 +6,23 @@ git push origin master
 nvidia-smi  # 查看显卡信息
 htop  # cpu情况 
 
-python src/main.py --model-epoch-start 0 --model-epoch-end 2 --model-train 1 --demo
-python src/main.py --model-epoch-start 0 --model-epoch-end 20 --model-train 1
 python src/main.py --model-name GedGNN --model-epoch-start 0 --model-epoch-end 20 --model-train 1
-
-
-python src/main.py --model-name MyGNN --model-epoch-start 0 --model-epoch-end 2 --model-train 1 --demo
-python src/main.py --model-name MyGNN --model-epoch-start 0 --model-epoch-end 20 --model-train 1
-
-python src/main.py --model-name MyGNN2 --model-epoch-start 0 --model-epoch-end 2 --model-train 1 --demo
-python src/main.py --model-name MyGNN2 --model-epoch-start 0 --model-epoch-end 20 --model-train 1
 
 python src/main.py --model-name MyGNN3 --model-epoch-start 0 --model-epoch-end 2 --model-train 1 --demo
 python src/main.py --model-name MyGNN3 --model-epoch-start 0 --model-epoch-end 25 --model-train 1
 python src/main.py --model-name MyGNN3 --dataset Linux --model-epoch-start 0 --model-epoch-end 25 --model-train 1
 python src/main.py --model-name MyGNN3 --dataset IMDB --model-epoch-start 0 --model-epoch-end 25 --model-train 1
 
+python src/main.py --model-name GOTSim --model-epoch-start 0 --model-epoch-end 15 --model-train 1
+python src/main.py --model-name GOTSim --dataset Linux --model-epoch-start 0 --model-epoch-end 15 --model-train 1
+python src/main.py --model-name GOTSim --dataset IMDB --model-epoch-start 0 --model-epoch-end 15 --model-train 1
+
+python src/main.py --model-name SimGNNReadoutPaper --readout mean --model-epoch-start 0 --model-epoch-end 15 --model-train 1
+python src/main.py --model-name SimGNNReadoutPaper --readout mean --dataset Linux --model-epoch-start 0 --model-epoch-end 15 --model-train 1
+python src/main.py --model-name SimGNNReadoutPaper --readout mean --dataset IMDB --model-epoch-start 0 --model-epoch-end 15 --model-train 1
+python src/main.py --model-name SimGNNReadoutPaper --readout max --model-epoch-start 0 --model-epoch-end 15 --model-train 1
+python src/main.py --model-name SimGNNReadoutPaper --readout max --dataset Linux --model-epoch-start 0 --model-epoch-end 15 --model-train 1
+python src/main.py --model-name SimGNNReadoutPaper --readout max --dataset IMDB --model-epoch-start 0 --model-epoch-end 15 --model-train 1
 
 nohup python src/main.py --model-epoch-start 0 --model-epoch-end 2 --model-train 1 --demo > log/demo.log 2>&1 &
 
-nohup python src/main.py --model-name MyGNN3 --model-epoch-start 0 --model-epoch-end 25 --model-train 1 > log/demo.log 2>&1 &
-nohup python src/main.py --model-name GedGNN --model-epoch-start 0 --model-epoch-end 20 --model-train 1 > log/demo.log 2>&1 &
-nohup python src/main.py --model-name MyGNN2 --model-epoch-start 0 --model-epoch-end 20 --model-train 1 > log/demo.log 2>&1 &
-
-nohup python src/main.py --model-name MyGNN3 --model-epoch-start 7 --model-epoch-end 25 --model-train 1 > log/demo1.log 2>&1 &
-
-
-2814226
