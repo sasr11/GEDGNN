@@ -1,0 +1,120 @@
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        IMDB      train       1                 1424.355852842331        436.541                  
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        IMDB      test        30000             0.351               37.512    18.094    0.015     0.752     nan       nan       0.878     0.803     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        IMDB      train       2                 1425.3076839447021       267.322                  
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        IMDB      test        30000             0.36                16.604    9.948     0.082     0.636     nan       nan       0.582     0.639     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        IMDB      train       3                 1272.7483525276184       183.567                  
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        IMDB      test        30000             0.272               15.596    9.571     0.07      0.652     nan       nan       0.615     0.673     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        IMDB      train       4                 655.9743127822876        183.194                  
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        IMDB      test        30000             0.272               17.074    10.121    0.07      0.648     nan       nan       0.603     0.661     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        IMDB      train       5                 656.5962100028992        182.212                  
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        IMDB      test        30000             0.269               15.012    9.074     0.071     0.644     nan       nan       0.61      0.672     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        IMDB      train       6                 655.9739925861359        182.512                  
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        IMDB      test        30000             0.274               15.5      9.391     0.067     0.639     nan       nan       0.609     0.665     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        IMDB      train       7                 656.0713036060333        182.293                  
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        IMDB      test        30000             0.27                15.238    8.769     0.078     0.624     0.558     0.488     0.621     0.679     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        IMDB      train       8                 655.9168782234192        181.094                  
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        IMDB      test        30000             0.271               14.987    8.86      0.061     0.641     nan       nan       0.617     0.676     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        IMDB      train       9                 654.699967622757         179.85                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        IMDB      test        30000             0.269               14.958    8.92      0.057     0.59      nan       nan       0.627     0.692     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        IMDB      train       10                656.5866186618805        179.006                  
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        IMDB      test        30000             0.271               15.066    9.194     0.072     0.623     nan       nan       0.621     0.686     
+```
+

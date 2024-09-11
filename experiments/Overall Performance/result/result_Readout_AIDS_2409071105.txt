@@ -1,0 +1,180 @@
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        AIDS      train       1                 632.3177471160889        143.008                  
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        AIDS      test        14000             0.366               8.489     1.364     0.234     0.584     0.63      0.494     0.416     0.549     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        AIDS      train       2                 742.5337176322937        92.379                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        AIDS      test        14000             0.38                7.047     1.234     0.255     0.616     0.689     0.548     0.489     0.612     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        AIDS      train       3                 792.1300959587097        80.372                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        AIDS      test        14000             0.374               6.693     1.2       0.268     0.662     0.704     0.561     0.498     0.621     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        AIDS      train       4                 742.7550084590912        77.534                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        AIDS      test        14000             0.364               6.693     1.194     0.269     0.636     0.713     0.571     0.513     0.63      
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        AIDS      train       5                 785.8287408351898        74.647                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        AIDS      test        14000             0.37                6.208     1.139     0.286     0.658     0.73      0.588     0.541     0.65      
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        AIDS      train       6                 739.2034103870392        70.333                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        AIDS      test        14000             0.373               6.061     1.124     0.294     0.606     0.738     0.595     0.544     0.655     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        AIDS      train       7                 812.3534364700317        67.482                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        AIDS      test        14000             0.397               6.013     1.115     0.293     0.605     0.738     0.595     0.556     0.654     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        AIDS      train       8                 765.6617908477783        65.81                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        AIDS      test        14000             0.373               5.766     1.094     0.297     0.634     0.752     0.609     0.564     0.668     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        AIDS      train       9                 781.4395513534546        63.873                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        AIDS      test        14000             0.524               5.744     1.092     0.295     0.683     0.754     0.611     0.561     0.671     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        AIDS      train       10                780.0562200546265        62.607                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        AIDS      test        14000             0.36                5.628     1.072     0.306     0.624     0.755     0.613     0.576     0.669     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        AIDS      train       11                765.1481983661652        61.701                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        AIDS      test        14000             0.363               5.591     1.074     0.303     0.674     0.764     0.622     0.571     0.676     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        AIDS      train       12                819.1761949062347        60.625                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        AIDS      test        14000             0.369               5.475     1.061     0.31      0.618     0.764     0.621     0.564     0.669     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        AIDS      train       13                726.0774140357971        59.359                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        AIDS      test        14000             0.362               5.397     1.051     0.31      0.599     0.768     0.626     0.561     0.672     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        AIDS      train       14                802.6320776939392        58.513                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        AIDS      test        14000             0.345               5.321     1.031     0.317     0.675     0.773     0.631     0.581     0.669     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+Readout        AIDS      train       15                755.0202667713165        57.256                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+Readout        AIDS      test        14000             0.328               5.217     1.024     0.321     0.646     0.773     0.631     0.573     0.669     
+```
+

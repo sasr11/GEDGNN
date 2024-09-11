@@ -16,7 +16,7 @@ from kbest_matching_with_lb import KBestMSolver
 from math import exp
 from scipy.stats import spearmanr, kendalltau
 
-from models import GPN, SimGNN, GedGNN, TaGSim, MyGNN3, GOTSim
+from models import GPN, SimGNN, GedGNN, TaGSim, MyGNN3, GOTSim, Readout
 from GedMatrix import fixed_mapping_loss
 
 
@@ -39,15 +39,16 @@ class Trainer(object):
         self.result_filename = 'result' + '_' + args.model_name + '_' + args.dataset + '_' + now + '.txt'
         print("result_filename =", self.result_filename)  # 存放训练结果和测试结果
         
-        self.use_gpu = torch.cuda.is_available()
-        # self.use_gpu = False
+        # self.use_gpu = torch.cuda.is_available()
+        self.use_gpu = False
         print("use_gpu =", self.use_gpu)
         self.device = torch.device('cuda:0') if self.use_gpu else torch.device('cpu')
 
         self.load_data()
         self.transfer_data_to_torch()
         self.delta_graphs = [None] * len(self.graphs)
-        # self.gen_delta_graphs()
+        if self.args.dataset == "IMDB":
+            self.gen_delta_graphs()
         self.init_graph_pairs()
 
         self.setup_model()
@@ -87,6 +88,13 @@ class Trainer(object):
                 self.args.loss_weight = 1.0
             self.args.gtmap = True
             self.model = GOTSim(self.args, self.number_of_labels).to(self.device)
+        elif self.args.model_name == "Readout":
+            if self.args.dataset in ["AIDS", "Linux"]:
+                self.args.loss_weight = 10.0
+            else:
+                self.args.loss_weight = 1.0
+            self.args.gtmap = True
+            self.model = Readout(self.args, self.number_of_labels).to(self.device)
         else:
             assert False
 
@@ -139,6 +147,18 @@ class Trainer(object):
                     else: # "exp"
                         losses = losses + F.relu(prediction - target)
         elif self.args.model_name == "GOTSim":
+            GED_weight = 10.0  # 10.0  self.args.loss_weight
+            for graph_pair in batch:
+                data = self.pack_graph_pair(graph_pair)
+                target, gt_mapping = data["target"], data["mapping"]
+                prediction, _, _ = self.model(data)
+                losses = losses + GED_weight * F.mse_loss(target, prediction)
+                if self.args.finetune:
+                    if self.args.target_mode == "linear":
+                        losses = losses + F.relu(target - prediction)
+                    else: # "exp"
+                        losses = losses + F.relu(prediction - target)
+        elif self.args.model_name == "Readout":
             GED_weight = 10.0  # 10.0  self.args.loss_weight
             for graph_pair in batch:
                 data = self.pack_graph_pair(graph_pair)

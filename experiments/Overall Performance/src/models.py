@@ -611,12 +611,8 @@ class MyGNN3(torch.nn.Module):
         abstract_features_1 = self.convolutional_pass_2(edge_index_1, features_1)  # [n1, 224]
         abstract_features_2 = self.convolutional_pass_2(edge_index_2, features_2)  # [n2, 224]
         
-        # cost_matrix, node_alignment = self.LRL_Cross(abstract_features_1, abstract_features_2)
-        
         # 计算节点成本矩阵
         cost_matrix = self.Cross(abstract_features_1, abstract_features_2)  # max*max mask (max-n)*(max-m)
-        # cost_matrix = self.Euclidean_Distance(abstract_features_1, abstract_features_2)
-        # cost_matrix = self.Cosin_similarty(abstract_features_1, abstract_features_2)
         
         # 计算节点对齐矩阵
         LRL_map_matrix = self.LRL(abstract_features_1, abstract_features_2)  # max*max
@@ -796,7 +792,7 @@ class GOTSim(torch.nn.Module):
         C_cpu = cost_matrix.detach().cpu().numpy()  # 移动到 CPU，并转换为 NumPy 数组，以便使用后续的 LAPJV 算法
         lowest_cost, col_ind_lapjv, row_ind_lapjv = lapjv(C_cpu)  # 调用 lapjv 函数解决线性分配问题（最优匹配）,每个行元素的最佳匹配列索引
         
-        loss = torch.tensor([0.0]).cuda()
+        loss = torch.tensor([0.0]).to(self.device)
         for i in range(num_pts):
             loss += cost_matrix[i,col_ind_lapjv[i]]
                     
@@ -820,12 +816,12 @@ class GOTSim(torch.nn.Module):
                                                  for i in range(self.num_gcn_layers)]  # n1*n2
 
         # these are matrix with 0 on the diagonal and inf cost on off-diagonal
-        insertion_constant_matrix = 99999 * (torch.ones(n1, n1, dtype=abstract_features_list_1[0].dtype) - torch.diag(torch.ones(n1))).cuda()  # n1*n1
-        deletion_constant_matrix = 99999 * (torch.ones(n2, n2, dtype=abstract_features_list_1[0].dtype) - torch.diag(torch.ones(n2))).cuda()  # n2*n2
+        insertion_constant_matrix = 99999 * (torch.ones(n1, n1, dtype=abstract_features_list_1[0].dtype) - torch.diag(torch.ones(n1))).to(self.device)  # n1*n1
+        deletion_constant_matrix = 99999 * (torch.ones(n2, n2, dtype=abstract_features_list_1[0].dtype) - torch.diag(torch.ones(n2))).to(self.device)  # n2*n2
 
         # 计算删除代价
         deletion_similarity_matrices_list = [
-            torch.diag(-torch.matmul(abstract_features_list_1[i], self.deletion_params[i])) 
+            torch.diag(-torch.matmul(abstract_features_list_1[i], self.deletion_params[i]))  # [n1,128] * [128,1]
                 + insertion_constant_matrix
             for i in range(self.num_gcn_layers)
         ]  # n1*n1
@@ -838,7 +834,7 @@ class GOTSim(torch.nn.Module):
         ]  # n2*n2
         
         dummy_similarity_matrices_list = [
-            torch.zeros(n2, n1, dtype=abstract_features_list_1[i].dtype).cuda()
+            torch.zeros(n2, n1, dtype=abstract_features_list_1[i].dtype).to(self.device)
             for i in range(self.num_gcn_layers)
         ]  # n2*n1
         
@@ -874,13 +870,13 @@ class GOTSim(torch.nn.Module):
         return score, pre_ged.item(), matching_cost
 
 
-class SimGNNReadoutPaper(torch.nn.Module):
+class Readout(torch.nn.Module):
     def __init__(self, args, number_of_labels):
         """
         :param args: Arguments object.
         :param number_of_labels: Number of node labels.
         """
-        super(SimGNNReadoutPaper, self).__init__()
+        super(Readout, self).__init__()
         self.args = args
         self.number_labels = number_of_labels
         self.setup_layers()
