@@ -457,7 +457,6 @@ class MyGNN3(torch.nn.Module):
         
         # one-hot初始化
         self.embedding = torch.nn.Linear(self.number_labels, self.args.init_features)
-        
     
     def convolutional_pass(self, edge_index, features):
         """
@@ -555,25 +554,6 @@ class MyGNN3(torch.nn.Module):
         """通过嵌入计算相似度矩阵
         Args:
             abstract_features_1 (_type_): 图1嵌入 [n1, 32]
-            abstract_features_2 (_type_): 图2嵌入 [n2, 32]
-            flag (_type_): 节点嵌入 or 边嵌入
-        Returns:
-            _type_: 相似度矩阵(通过mask消除填充向量的影响, 同时因为之后会和置换矩阵相乘, 置换矩阵不用再mask)
-            取值范围(-无穷，+无穷)
-        """
-        n1 = abstract_features_1.shape[0]
-        n2 = abstract_features_2.shape[0]
-        max_size = max(n1, n2)
-        # 填充
-        m = self.costMatrix(abstract_features_1, abstract_features_2)  # [n1, n2]
-        cost_matrix = F.pad(m, pad=(0,max_size-n2,0,max_size-n1))  # [max_size, max_size]
-        
-        return cost_matrix
-    
-    def Cross(self, abstract_features_1, abstract_features_2):
-        """通过嵌入计算相似度矩阵
-        Args:
-            abstract_features_1 (_type_): 图1嵌入 [n1, 32]
             abstract_features_2 (_type_): 图2嵌入 [n1, 32]
             flag (_type_): 节点嵌入 or 边嵌入
         Returns:
@@ -588,10 +568,33 @@ class MyGNN3(torch.nn.Module):
         abstract_features_2 = F.pad(abstract_features_2, pad=(0,0,0,max_size-n2))  # [max_size, 32]
         # 交互
         m = self.costMatrix(abstract_features_1, abstract_features_2)  # [max_size, max_size]
-        # mask
-        mask = torch.cat((torch.tensor([1]).repeat(n1,1).repeat(1,max_size), torch.tensor([0]).repeat(max_size-n1,1).repeat(1,max_size))).to(self.device)  # [max_size, max_size]
-        return torch.mul(mask, m)
-  
+        if n1 < n2:
+            # mask
+            mask = torch.cat((torch.ones(n2).repeat(n1,1), torch.zeros(n2).repeat(n2-n1,1))).to(self.device)  # [max_size, max_size]
+            cost_matrix = torch.mul(mask, m)
+            # deletion cost
+            pooled_features_2 = torch.mean(abstract_features_2, dim=0, keepdim=True).transpose(0,1)  # d*1
+            del_cost_list = torch.mm(abstract_features_2, pooled_features_2).transpose(0,1)  # [n2,d]*[d,1]=[n2,1] [1,n2]
+            del_cost_matrix = torch.cat((torch.zeros(n2).repeat(n1,1), del_cost_list.repeat(n2-n1,1)))  # n2*n2
+            return cost_matrix + del_cost_matrix
+        elif n1 == n2: 
+            return m
+        else: 
+            print("\nerror\n")
+
+    def Cross(self, abstract_features_1, abstract_features_2):
+        n1 = abstract_features_1.shape[0]
+        n2 = abstract_features_2.shape[0]
+        if n1 < n2:  # 图1节点数小于等于图2
+            # 计算增删代价
+            pooled_features_2 = torch.mean(abstract_features_2, dim=0, keepdim=True)  # 1*d
+            abstract_features_1 = torch.cat((abstract_features_1, pooled_features_2.repeat(n2-n1,1)))  # n2*d
+        elif n1 > n2: print("\nerror\n") 
+        # 交互
+        m = self.costMatrix(abstract_features_1, abstract_features_2)  # [max_size, max_size]
+        return m
+
+
     def forward(self, data):
         """
         Forward pass with graphs.
