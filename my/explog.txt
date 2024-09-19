@@ -129,10 +129,10 @@ lrl_hiddim   costMatrix-k   init_features   final_features    轮次     mae    
     mae     acc     rho     tau     p10
     0.663   0.444   0.898   0.776   0.736
 
+实验：
+
+
 问题：
-1、把Cross模块的代码简化后，使用cat-features会导致loss异常不下降，维持在2000以上
-    哪怕用来原来的Cross模块，使用cat-features也有概率会导致loss异常不下降。
-    可能是参数过多，导致模型不稳定，梯度消失\梯度爆炸。
 
 
        2  3  4  5  6  7  8  9  10   均值

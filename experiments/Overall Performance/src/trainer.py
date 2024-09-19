@@ -39,8 +39,8 @@ class Trainer(object):
         self.result_filename = 'result' + '_' + args.model_name + '_' + args.dataset + '_' + now + '.txt'
         print("result_filename =", self.result_filename)  # 存放训练结果和测试结果
         
-        # self.use_gpu = torch.cuda.is_available()
-        self.use_gpu = False
+        self.use_gpu = torch.cuda.is_available()
+        # self.use_gpu = False
         print("use_gpu =", self.use_gpu)
         self.device = torch.device('cuda:0') if self.use_gpu else torch.device('cpu')
 
@@ -135,10 +135,14 @@ class Trainer(object):
                 losses = losses + torch.nn.functional.mse_loss(ta_ged, prediction)
         elif self.args.model_name == "MyGNN3":
             GED_weight = 10.0  # 10.0  self.args.loss_weight
+            matrices_list = []  # my
+            gid_list = []  # my
             for graph_pair in batch:
                 data = self.pack_graph_pair(graph_pair)
                 target, gt_mapping = data["target"], data["mapping"]
-                prediction, _, _ = self.model(data)
+                prediction, _, matrices = self.model(data)  # prediction预测的分数，matrices=(相似度矩阵,对齐矩阵)np格式
+                matrices_list.append(matrices)  # my
+                gid_list.append((self.gid[data['id_1']], self.gid[data['id_2']], data['ged'], prediction.item()))  # my
                 GED_loss = GED_weight * F.mse_loss(target, prediction)
                 losses = losses + GED_loss
                 if self.args.finetune:
@@ -146,6 +150,11 @@ class Trainer(object):
                         losses = losses + F.relu(target - prediction)
                     else: # "exp"
                         losses = losses + F.relu(prediction - target)
+            with open('save.txt', 'a') as f:
+                for pair1, pair2 in zip(gid_list, matrices_list):
+                    # gid1, gid2, ged, pre_score, similarity_matrix, alignment_matrix
+                    f.write(f"({pair1[0]}, {pair1[1]}, {pair1[2]}, {pair1[3]}, {pair2[0].tolist()}, {pair2[1].tolist()})\n")
+                    
         elif self.args.model_name == "GOTSim":
             GED_weight = 10.0  # 10.0  self.args.loss_weight
             for graph_pair in batch:
@@ -243,8 +252,8 @@ class Trainer(object):
         ged = [[(0., 0., 0., 0.) for i in range(n)] for j in range(n)]
         gid = [g['gid'] for g in self.graphs]
         self.gid = gid
-        self.gn = [g['n'] for g in self.graphs]
-        self.gm = [g['m'] for g in self.graphs]
+        self.gn = [g['n'] for g in self.graphs]  # 节点数
+        self.gm = [g['m'] for g in self.graphs]  # 边数
         # 遍历所有可能的图对
         for i in range(n):
             mapping[i][i] = torch.eye(self.gn[i], dtype=torch.float, device=self.device)
@@ -444,10 +453,10 @@ class Trainer(object):
         (pair_type, id_1, id_2) = graph_pair
         if pair_type == 0:  # normal case
             gid_pair = (self.gid[id_1], self.gid[id_2])
-            if gid_pair not in self.ged_dict:
+            if gid_pair not in self.ged_dict:  # 在check_pair中已经检查过图对是否有gtGED了，这里找不到把顺序换一下就能找到了
                 id_1, id_2 = (id_2, id_1)
 
-            real_ged = self.ged[id_1][id_2][0]
+            real_ged = self.ged[id_1][id_2][0]  # 在一个三维矩阵中找
             ta_ged = self.ged[id_1][id_2][1:]
 
             new_data["id_1"] = id_1

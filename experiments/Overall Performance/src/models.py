@@ -609,7 +609,6 @@ class MyGNN3(torch.nn.Module):
         features_2 = data["features_2"]  # (torch.Tensor)m*29
         features_1 = self.embedding(features_1)
         features_2 = self.embedding(features_2)
-        
         # 计算节点嵌入
         abstract_features_1 = self.convolutional_pass_2(edge_index_1, features_1)  # [n1, 224]
         abstract_features_2 = self.convolutional_pass_2(edge_index_2, features_2)  # [n2, 224]
@@ -634,7 +633,7 @@ class MyGNN3(torch.nn.Module):
         else:
             assert False
 
-        return score, pre_ged.item(), cost_matrix
+        return score, pre_ged.item(), (LRL_map_matrix.detach().cpu().numpy(), node_alignment.detach().cpu().numpy())
 
 
 class TaGSim(torch.nn.Module):

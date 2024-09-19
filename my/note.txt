@@ -64,7 +64,7 @@ main()
 
         - init_graph_pairs()  # 构建训练图对集合
             * self.training_graphs  # 训练图对集合 (420+1)*420/2 等差数列求和
-                len([(type, id1, id2),...,]) = 88420
+                len([(type, id1, id2),...,]) = 88420  type=0为小图  这里的id是顺序而非图id
             * self.val_graphs  # 验证图对集合(验证集与训练集随机100个图匹配匹配)  140*100
                 len([(type,test_id,[id1, id2,...id100]),...,]) = 140
             * self.testing_graphs  # 测试图对集合1(测试集与训练集随机100个图匹配)  140*100
