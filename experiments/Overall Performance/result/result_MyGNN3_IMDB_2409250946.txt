@@ -1,0 +1,300 @@
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       1                 1946.118663072586        113.181                  
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.556               29.204    6.256     0.083     0.663     0.446     0.394     0.423     0.466     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       2                 2138.332193136215        27.596                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.843               6.987     3.292     0.127     0.506     0.594     0.515     0.623     0.653     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       3                 2938.9244871139526       11.434                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             1.092               6.491     3.092     0.144     0.453     0.561     0.488     0.64      0.663     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       4                 2911.628248691559        9.226                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.769               7.21      3.006     0.149     0.47      0.66      0.56      0.753     0.77      
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       5                 1969.2404255867004       8.308                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.557               5.151     2.747     0.163     0.486     0.552     0.479     0.642     0.664     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       6                 1951.7853906154633       7.443                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.556               6.158     2.894     0.143     0.46      0.646     0.557     0.679     0.704     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       7                 2009.7463862895966       6.646                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.556               5.936     2.82      0.165     0.493     0.7       0.591     0.799     0.806     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       8                 2103.9921073913574       6.027                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.564               7.766     2.987     0.17      0.532     0.641     0.545     0.705     0.72      
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       9                 1951.8200769424438       6.183                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.558               14.736    3.568     0.214     0.542     0.655     0.541     0.789     0.769     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       10                1948.4103786945343       5.442                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.551               8.084     3.06      0.196     0.6       0.686     0.574     0.76      0.795     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       11                1965.1106185913086       4.983                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.552               15.895    3.314     0.346     0.554     0.703     0.581     0.828     0.811     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       12                1962.6526808738708       4.534                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.55                8.75      3.065     0.19      0.431     0.71      0.603     0.735     0.78      
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       13                1959.920573234558        4.301                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.552               12.84     3.261     0.209     0.499     0.686     0.564     0.787     0.769     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       14                1966.640014886856        4.225                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.573               18.174    3.611     0.331     0.457     0.74      0.625     0.841     0.827     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       15                1959.2251467704773       3.976                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.555               15.24     3.559     0.229     0.595     0.669     0.542     0.79      0.786     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       16                1984.2898890972137       3.757                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.552               19.36     3.616     0.35      0.542     0.687     0.576     0.81      0.786     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       17                1958.6150844097137       3.631                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.552               17.793    3.473     0.364     0.561     0.749     0.624     0.84      0.82      
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       18                1964.8773894309998       3.31                     
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.553               16.104    3.23      0.371     0.576     0.783     0.664     0.866     0.837     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       19                1965.7732672691345       3.167                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.632               16.133    3.219     0.375     0.531     0.776     0.651     0.862     0.842     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       20                2030.7563619613647       3.054                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.553               18.004    3.386     0.384     0.538     0.736     0.624     0.838     0.82      
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       21                1966.064906835556        3.095                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.551               19.555    3.489     0.367     0.489     0.491     0.424     0.49      0.526     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       22                1961.6007416248322       2.905                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.552               16.775    3.405     0.347     0.451     0.765     0.64      0.846     0.837     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       23                1963.743441104889        2.857                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.553               16.948    3.379     0.388     0.514     0.744     0.619     0.85      0.833     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       24                1961.0425267219543       2.727                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.555               17.914    3.368     0.401     0.56      0.729     0.603     0.861     0.839     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         IMDB      train       25                1960.5784072875977       2.587                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         IMDB      test        30000             0.551               15.376    3.125     0.406     0.581     0.759     0.631     0.846     0.836     
+```
+

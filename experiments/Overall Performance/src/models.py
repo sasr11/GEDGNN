@@ -438,7 +438,7 @@ class MyGNN3(torch.nn.Module):
             raise NotImplementedError('Unknown GNN-Operator.')
 
         self.costMatrix = GedMatrixModule(self.args.final_features, self.args.hidden_dim)  # self.args.filters_3  cat
-
+        # self.costMatrix = SimpleMatrixModule(self.args.final_features)  # No Cross Matrix Module
         # bias
         self.attention = AttentionModule(self.args)
         self.tensor_network = TensorNetworkModule(self.args)
@@ -571,12 +571,7 @@ class MyGNN3(torch.nn.Module):
         if n1 < n2:
             # mask
             mask = torch.cat((torch.ones(n2).repeat(n1,1), torch.zeros(n2).repeat(n2-n1,1))).to(self.device)  # [max_size, max_size]
-            cost_matrix = torch.mul(mask, m)
-            # deletion cost
-            pooled_features_2 = torch.mean(abstract_features_2, dim=0, keepdim=True).transpose(0,1)  # d*1
-            del_cost_list = torch.mm(abstract_features_2, pooled_features_2).transpose(0,1)  # [n2,d]*[d,1]=[n2,1] [1,n2]
-            del_cost_matrix = torch.cat((torch.zeros(n2).repeat(n1,1), del_cost_list.repeat(n2-n1,1)))  # n2*n2
-            return cost_matrix + del_cost_matrix
+            return torch.mul(mask, m)
         elif n1 == n2: 
             return m
         else: 
@@ -633,7 +628,8 @@ class MyGNN3(torch.nn.Module):
         else:
             assert False
 
-        return score, pre_ged.item(), (LRL_map_matrix.detach().cpu().numpy(), node_alignment.detach().cpu().numpy())
+        # return score, pre_ged.item(), (LRL_map_matrix.detach().cpu().numpy(), node_alignment.detach().cpu().numpy())
+        return score, pre_ged.item(), cost_matrix
 
 
 class TaGSim(torch.nn.Module):

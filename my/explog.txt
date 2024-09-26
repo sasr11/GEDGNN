@@ -127,10 +127,20 @@ lrl_hiddim   costMatrix-k   init_features   final_features    轮次     mae    
 实验54：result_MyGNN3_AIDS_2409131009
     说明：在2408221915的基础上，增加了Cost矩阵中节点增删代价。图2的节点嵌入取平均拼接到图1的节点嵌入下面，然后通过Cross模块。
     mae     acc     rho     tau     p10
-    0.663   0.444   0.898   0.776   0.736
+    0.663   0.444   0.898   0.776   0.736   AIDS_2409131009
+    0.058   0.945   0.964   0.884   0.980   Linux_2409231631
+    3.125   0.406   0.759   0.631   0.846   IMDB_2409250946
 
-实验：
+实验55：result_MyGNN3_AIDS_2409201142
+        result_MyGNN3_AIDS_2409202052
+    说明：在2409131009的基础上，将Cross Matrix Module 改成 Simple Matrix Module
+    mae     acc     rho     tau     p10
+    0.687   0.428   0.894   0.771   0.746
 
+实验56：result_MyGNN3_AIDS_2409230947
+    说明：在2409131009的基础上，去掉gumbel-sinkhorn
+    mae     acc     rho     tau     p10
+    0.655   0.454   0.904   0.785   0.752
 
 问题：
 

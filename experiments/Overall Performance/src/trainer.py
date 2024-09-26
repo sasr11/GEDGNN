@@ -12,7 +12,6 @@ from tqdm import tqdm
 from utils import load_all_graphs, load_labels, load_ged
 from my_utils import *
 import matplotlib.pyplot as plt
-from kbest_matching_with_lb import KBestMSolver
 from math import exp
 from scipy.stats import spearmanr, kendalltau
 
@@ -135,14 +134,14 @@ class Trainer(object):
                 losses = losses + torch.nn.functional.mse_loss(ta_ged, prediction)
         elif self.args.model_name == "MyGNN3":
             GED_weight = 10.0  # 10.0  self.args.loss_weight
-            matrices_list = []  # my
-            gid_list = []  # my
+            # matrices_list = []  # my
+            # gid_list = []  # my
             for graph_pair in batch:
                 data = self.pack_graph_pair(graph_pair)
                 target, gt_mapping = data["target"], data["mapping"]
                 prediction, _, matrices = self.model(data)  # prediction预测的分数，matrices=(相似度矩阵,对齐矩阵)np格式
-                matrices_list.append(matrices)  # my
-                gid_list.append((self.gid[data['id_1']], self.gid[data['id_2']], data['ged'], prediction.item()))  # my
+                # matrices_list.append(matrices)  # my
+                # gid_list.append((self.gid[data['id_1']], self.gid[data['id_2']], data['ged'], prediction.item()))  # my
                 GED_loss = GED_weight * F.mse_loss(target, prediction)
                 losses = losses + GED_loss
                 if self.args.finetune:
@@ -150,10 +149,11 @@ class Trainer(object):
                         losses = losses + F.relu(target - prediction)
                     else: # "exp"
                         losses = losses + F.relu(prediction - target)
-            with open('save.txt', 'a') as f:
-                for pair1, pair2 in zip(gid_list, matrices_list):
-                    # gid1, gid2, ged, pre_score, similarity_matrix, alignment_matrix
-                    f.write(f"({pair1[0]}, {pair1[1]}, {pair1[2]}, {pair1[3]}, {pair2[0].tolist()}, {pair2[1].tolist()})\n")
+            
+            # with open('save.txt', 'a') as f:
+            #     for pair1, pair2 in zip(gid_list, matrices_list):
+            #         # gid1, gid2, ged, pre_score, similarity_matrix, alignment_matrix
+            #         f.write(f"({pair1[0]}, {pair1[1]}, {pair1[2]}, {pair1[3]}, {pair2[0].tolist()}, {pair2[1].tolist()})\n")
                     
         elif self.args.model_name == "GOTSim":
             GED_weight = 10.0  # 10.0  self.args.loss_weight
@@ -774,39 +774,6 @@ class Trainer(object):
             for r in self.results:
                 print(*r, sep='\t', file=f)
 
-    def test_matching(self, data, test_k, batch_mode=False):
-        prediction, pre_ged, soft_matrix = self.model(data)
-        m = torch.nn.Softmax(dim=1)
-        soft_matrix = (m(soft_matrix) * 1e9 + 1).round()
-        n1, n2 = soft_matrix.shape
-        # print(data["edge_index_1"].shape)
-        g1 = dgl.graph((data["edge_index_1"][0], data["edge_index_1"][1]), num_nodes=n1)
-        g2 = dgl.graph((data["edge_index_2"][0], data["edge_index_2"][1]), num_nodes=n2)
-        g1.ndata['f'] = data["features_1"]
-        g2.ndata['f'] = data["features_2"]
-
-        if batch_mode:
-            t1 = time.time()
-            solver = KBestMSolver(soft_matrix, g1, g2)
-            res = []
-            time_usage = []
-            for i in [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]:
-                if i > test_k:
-                    break
-                solver.get_matching(i)
-                min_res = solver.min_ged
-                t2 = time.time()
-                time_usage.append(t2 - t1)
-                res.append(min_res)
-                time_usage.append(t2 - t1)
-                res.append(min(pre_ged, min_res))
-            return time_usage, res
-        else:
-            solver = KBestMSolver(soft_matrix, g1, g2)
-            solver.get_matching(test_k)
-            min_res = solver.min_ged
-            return None, min_res
-
     def prediction_analysis(self, values, info_str=''):
         """
         Analyze the performance of value prediction.
@@ -838,176 +805,6 @@ class Trainer(object):
             print("num", pos_num, neg_num, tot_num, sep='\t', file=f)
             print("err", pos_error, neg_error, tot_error, sep='\t', file=f)
             print("--------------------", file=f)
-
-    def demo_testing(self, testing_graph_set='test'):
-        print("\n\nDemo testing on {} set.\n".format(testing_graph_set))
-        self.testing_graph_set.append(testing_graph_set)
-        if testing_graph_set == 'test':
-            testing_graphs = self.testing_graphs
-        elif testing_graph_set == 'test2':
-            testing_graphs = self.testing2_graphs
-        elif testing_graph_set == 'val':
-            testing_graphs = self.val_graphs
-        elif testing_graph_set == 'train':
-            testing_graphs = self.training_graphs
-        else:
-            assert False
-
-        self.model.eval()
-
-        # demo_num = 10
-        demo_num = len(testing_graphs)
-        # random.shuffle(testing_graphs)
-        testing_graphs = testing_graphs[:demo_num]
-        total_num = 0
-        num_10 = 0
-        num_100 = 0
-        num_1000 = 0
-        score_10 = [[], [], []]
-        score_100 = [[], [], []]
-        score_1000 = [[], [], []]
-
-        values0 = []
-        values1 = []
-        values2 = []
-        values3 = []
-
-        m = torch.nn.Softmax(dim=1)
-        for graph_pair in tqdm(testing_graphs, file=sys.stdout):
-            data = self.pack_graph_pair(graph_pair)
-            avg_v = data["avg_v"]  # (n1+n2)/2.0, a scalar, not a tensor
-            gt_ged, target = data["ged"], data["target"]  # gt ged value and score
-            soft_matrix, _, prediction = self.model(data, is_testing=True)
-            pre_ged, gt_ged, gt_score = prediction.item(), gt_ged.item(), target.item()
-
-            values0.append(pre_ged - gt_ged)
-
-            soft_matrix = (torch.sigmoid(soft_matrix) * 1e9 + 1).round()
-            # soft_matrix = (m(soft_matrix) * 1e9 + 1).int()
-            # soft_matrix = ((soft_matrix - soft_matrix.min()) * 1e9 + 1).round()
-
-            n1, n2 = soft_matrix.shape
-            # print(data["edge_index_1"].shape)
-            g1 = dgl.graph((data["edge_index_1"][0], data["edge_index_1"][1]), num_nodes=n1)
-            g2 = dgl.graph((data["edge_index_2"][0], data["edge_index_2"][1]), num_nodes=n2)
-            g1.ndata['f'] = data["features_1"]
-            g2.ndata['f'] = data["features_2"]
-
-            # if n1 < 10 or n2 < 10:
-            #   continue
-
-            total_num += 1
-            test_k = self.args.postk
-
-            solver = KBestMSolver(soft_matrix, g1, g2, pre_ged)
-            for k in range(test_k):
-                '''
-                matching, weightsum, sp_ged = solver.get_matching(k + 1)
-                if weightsum is None:
-                    print(k, solver.min_ged, gt_ged)
-                    break
-                mapping = torch.zeros([n1, n2])
-                for i, j in enumerate(matching):
-                    mapping[i][j] = 1.0
-                mapping_ged = self.model.ged_from_mapping(mapping, data["A_1"], data["A_2"], data["features_1"],
-                                                          data["features_2"])
-                min_res = min(min_res, mapping_ged.item())
-                '''
-                solver.get_matching(k + 1)
-                min_res = solver.min_ged
-                # a gt_mapping is found
-                if abs(min_res - gt_ged) < 1e-12:
-                    # fix pre_ged using lower bound
-                    fixed_pre_ged = max(solver.lb_value, pre_ged)
-                    # fix pre_ged using upper bound
-                    if min_res < fixed_pre_ged:
-                        fixed_pre_ged = min_res
-
-                    fixed_pre_s = exp(-fixed_pre_ged / avg_v)
-                    pre_score = abs(fixed_pre_ged - gt_ged)
-                    pre_score2 = (fixed_pre_s - gt_score) ** 2
-                    map_score = 0.0
-                    if k < 10:
-                        score_10[0].append(pre_score2)
-                        score_10[1].append(pre_score)
-                        score_10[2].append(map_score)
-                        num_10 += 1
-                        values1.append(fixed_pre_ged - gt_ged)
-                    if k < 100:
-                        score_100[0].append(pre_score2)
-                        score_100[1].append(pre_score)
-                        score_100[2].append(map_score)
-                        num_100 += 1
-                        values2.append(fixed_pre_ged - gt_ged)
-                    if k < 1000:
-                        score_1000[0].append(pre_score2)
-                        score_1000[1].append(pre_score)
-                        score_1000[2].append(map_score)
-                        num_1000 += 1
-                        values3.append(fixed_pre_ged - gt_ged)
-                    break
-                if k in [9, 99, 999]:
-                    # fix pre_ged using lower bound
-                    fixed_pre_ged = max(solver.lb_value, pre_ged)
-                    # fix pre_ged using upper bound
-                    if min_res < fixed_pre_ged:
-                        fixed_pre_ged = min_res
-
-                    fixed_pre_s = exp(-fixed_pre_ged / avg_v)
-                    pre_score = abs(fixed_pre_ged - gt_ged)
-                    pre_score2 = (fixed_pre_s - gt_score) ** 2
-                    map_score = abs(min_res - gt_ged)
-                    if k + 1 == 10:
-                        score_10[0].append(pre_score2)
-                        score_10[1].append(pre_score)
-                        score_10[2].append(map_score)
-                        values1.append(fixed_pre_ged - gt_ged)
-                    elif k + 1 == 100:
-                        score_100[0].append(pre_score2)
-                        score_100[1].append(pre_score)
-                        score_100[2].append(map_score)
-                        values2.append(fixed_pre_ged - gt_ged)
-                    elif k + 1 == 1000:
-                        score_1000[0].append(pre_score2)
-                        score_1000[1].append(pre_score)
-                        score_1000[2].append(map_score)
-                        values3.append(fixed_pre_ged - gt_ged)
-
-        if test_k >= 10:
-            print("10:", len(score_10[0]), round(np.mean(score_10[1]), 3), round(np.mean(score_10[2]), 3), sep='\t')
-            print("{} / {} = {}".format(num_10, total_num, round(num_10 / total_num, 3)))
-        if test_k >= 100:
-            print("100:", len(score_100[0]), round(np.mean(score_100[1]), 3), round(np.mean(score_100[2]), 3), sep='\t')
-            print("{} / {} = {}".format(num_100, total_num, round(num_100 / total_num, 3)))
-        if test_k >= 1000:
-            print("1000:", len(score_1000[0]), round(np.mean(score_1000[1]), 3), round(np.mean(score_1000[2]), 3),
-                  sep='\t')
-            print("{} / {} = {}".format(num_1000, total_num, round(num_1000 / total_num, 3)))
-
-        with open(self.args.abs_path + self.args.result_path + self.args.dataset + '.txt', 'a') as f:
-            print('', file=f)
-            print(self.cur_epoch, testing_graph_set, demo_num, sep='\t', file=f)
-            if test_k >= 10:
-                print("10", round(np.mean(score_10[0]) * 1000, 3), round(np.mean(score_10[1]), 3),
-                      round(np.mean(score_10[2]), 3), round(num_10 / total_num, 3), sep='\t', file=f)
-                # print("{} / {} = {}".format(num_10, total_num, round(num_10 / total_num, 3)), file=f)
-            if test_k >= 100:
-                print("100", round(np.mean(score_100[0]) * 1000, 3), round(np.mean(score_100[1]), 3),
-                      round(np.mean(score_100[2]), 3), round(num_100 / total_num, 3), sep='\t', file=f)
-                # print("{} / {} = {}".format(num_100, total_num, round(num_100 / total_num, 3)), file=f)
-            if test_k >= 1000:
-                print("1000", round(np.mean(score_1000[0]) * 1000, 3), round(np.mean(score_1000[1]), 3),
-                      round(np.mean(score_1000[2]), 3), round(num_1000 / total_num, 3), sep='\t', file=f)
-                # print("{} / {} = {}".format(num_1000, total_num, round(num_1000 / total_num, 3)), file=f)
-            # print('', file=f)
-
-        self.prediction_analysis(values0, "base")
-        if test_k >= 10:
-            self.prediction_analysis(values1, "10")
-        if test_k >= 100:
-            self.prediction_analysis(values2, "100")
-        if test_k >= 1000:
-            self.prediction_analysis(values3, "1000")
 
     def plot_error(self, errors, dataset=''):
         name = self.args.dataset
