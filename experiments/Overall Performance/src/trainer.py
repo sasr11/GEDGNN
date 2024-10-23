@@ -153,8 +153,7 @@ class Trainer(object):
             # with open('save.txt', 'a') as f:
             #     for pair1, pair2 in zip(gid_list, matrices_list):
             #         # gid1, gid2, ged, pre_score, similarity_matrix, alignment_matrix
-            #         f.write(f"({pair1[0]}, {pair1[1]}, {pair1[2]}, {pair1[3]}, {pair2[0].tolist()}, {pair2[1].tolist()})\n")
-                    
+            #         f.write(f"({pair1[0]}, {pair1[1]}, {pair1[2]}, {pair1[3]}, {pair2[0].tolist()}, {pair2[1].tolist()})\n") 
         elif self.args.model_name == "GOTSim":
             GED_weight = 10.0  # 10.0  self.args.loss_weight
             for graph_pair in batch:
@@ -406,11 +405,24 @@ class Trainer(object):
         # 测试集140张图与随机打乱顺序的训练集前100张图
         for i in range(val_num, test_num):
             if self.gn[i] <= 10:
-                random.shuffle(li)
-                self.testing_graphs.append((0, i, li[:self.args.num_testing_graphs]))  # self.args.num_testing_graphs
+                if self.args.model_train == 1:
+                    random.shuffle(li)
+                    self.testing_graphs.append((0, i, li[:self.args.num_testing_graphs]))
+                else:
+                    self.testing_graphs.append((0, i, li))
             elif dg[i] is not None:
                 k = len(dg[i])
                 self.testing_graphs.append((1, i, list(range(k))))
+        
+        # 消融实验，筛选出两张图大小不一样的图对作为新的测试集, 仅在AIDS和Liunx上
+        # num_pairs = 0
+        # for i in range(val_num, test_num):
+        #     li = []
+        #     for j in range(train_num):
+        #         if self.gn[i] != self.gn[j]:
+        #            li.append(j) 
+        #     self.testing_graphs.append((0, i, li))
+        #     num_pairs += len(li)
                 
         # li = []  # 测试集图id列表，用于后续测试集2的生成
         # for i in range(val_num, test_num):
@@ -428,7 +440,8 @@ class Trainer(object):
 
         print("Generate {} training graph pairs.".format(len(self.training_graphs)))
         # print("Generate {} * {} val graph pairs.".format(len(self.val_graphs), self.args.num_testing_graphs))
-        print("Generate {} * {} testing graph pairs.".format(len(self.testing_graphs), self.args.num_testing_graphs))  # 
+        if self.args.model_train == 1: print("Generate {} * {} testing graph pairs.".format(len(self.testing_graphs), self.args.num_testing_graphs))
+        else: print("Generate {} * {} testing graph pairs.".format(len(self.testing_graphs), train_num))
         # print("Generate {} * {} testing2 graph pairs.".format(len(self.testing2_graphs), self.args.num_testing_graphs))
 
     def create_batches(self):
@@ -581,12 +594,16 @@ class Trainer(object):
 
     @staticmethod
     def cal_pk(num, pre, gt):
+        """
+        分别按真实值和预测值排序，并取前k个，统计前k个中有几个重合
+        因为不考虑精确匹配，只考虑前k个是否重合，所以真实值和预测值的排序无论先后
+        """
         tmp = list(zip(gt, pre))
-        tmp.sort()  # 按预测值从小到大排，前n个就是预测的最相似的值
+        tmp.sort()  # 按真实值从小到大排
         beta = []
-        for i, p in enumerate(tmp):  # 标记前n个
+        for i, p in enumerate(tmp):  # 标记
             beta.append((p[1], p[0], i))
-        beta.sort()  # 按真实值从小到大排，前n个就是真实的最相似的值
+        beta.sort()  # 按预测值从小到大排
         ans = 0
         for i in range(num):  # 根据标记，统计gt的前n中有几个pre的前n
             if beta[i][2] < num:
@@ -630,7 +647,10 @@ class Trainer(object):
                 data = self.pack_graph_pair((pair_type, i, j))
                 target, gt_ged = data["target"].item(), data["ged"]
                 model_out = self.model(data) if test_k == 0 else self.test_matching(data, test_k)
-                prediction, pre_ged, _, = model_out
+                if self.args.model_name in ["SimGNN", "GPN", "TaGSim"]:
+                    prediction, pre_ged = model_out
+                else:
+                    prediction, pre_ged, _, = model_out
                 round_pre_ged = round(pre_ged)  # 四舍五入到个位数
 
                 num += 1
@@ -656,7 +676,7 @@ class Trainer(object):
             tau.append(kendalltau(pre, gt)[0])
             pk10.append(self.cal_pk(10, pre, gt))
             pk20.append(self.cal_pk(20, pre, gt))
-
+            
         time_usage = round(np.mean(time_usage), 3)
         mse = round(np.mean(mse) * 1000, 3)
         mae = round(np.mean(mae), 3)
@@ -686,6 +706,116 @@ class Trainer(object):
             print(format_str.format(*self.results[-1]), file=f)
             print("```\n", file=f)
 
+    def score_rank(self, testing_graph_set='test', test_k=0):
+        """
+        Scoring on the test set.
+        """
+        print("\n\nModel evaluation on {} set (Rank).\n".format(testing_graph_set))
+        if testing_graph_set == 'test':
+            testing_graphs = self.testing_graphs
+        elif testing_graph_set == 'test2':
+            testing_graphs = self.testing2_graphs
+        elif testing_graph_set == 'val':
+            testing_graphs = self.val_graphs
+        else:
+            assert False
+
+        self.model.eval()
+        # self.model.train()
+
+        num = 0  # total testing number
+        time_usage = []
+        mse = []  # score mse
+        mae = []  # ged mae
+        num_acc = 0  # the number of exact prediction (pre_ged == gt_ged)
+        num_fea = 0  # the number of feasible prediction (pre_ged >= gt_ged)
+        rho = []
+        tau = []
+        pk10 = []
+        pk20 = []
+        # matching_list = []  # my
+
+        for pair_type, i, j_list in tqdm(testing_graphs, file=sys.stdout):
+            pre = []
+            gt = []
+            nged = []  # rank
+            t1 = time.time()
+            for j in j_list:
+                data = self.pack_graph_pair((pair_type, i, j))
+                target, gt_ged = data["target"].item(), data["ged"]
+                model_out = self.model(data) if test_k == 0 else self.test_matching(data, test_k)
+                if self.args.model_name in ["SimGNN", "GPN", "TaGSim"]:
+                    prediction, pre_ged = model_out
+                else:
+                    prediction, pre_ged, _, = model_out
+                round_pre_ged = round(pre_ged)  # 四舍五入到个位数
+
+                num += 1
+                if prediction is None:
+                    mse.append(-0.001)
+                elif prediction.shape[0] == 1:
+                    mse.append((prediction.item() - target) ** 2)
+                else:  # TaGSim
+                    mse.append(F.mse_loss(prediction, data["ta_ged"]).item())
+                pre.append(pre_ged)
+                gt.append(gt_ged)
+                if self.args.model_name in ["SimGNN", "TaGSim"]:
+                    nged.append(round(1-np.exp(-(gt_ged/data["avg_v"])), 3))  # rank
+                else: nged.append(round(gt_ged/data["hb"], 3))  # rank
+
+                mae.append(abs(round_pre_ged - gt_ged))
+                if round_pre_ged == gt_ged:
+                    num_acc += 1
+                    num_fea += 1
+                elif round_pre_ged > gt_ged:
+                    num_fea += 1
+                
+            t2 = time.time()
+            time_usage.append(t2 - t1)
+            rho.append(spearmanr(pre, gt)[0])
+            tau.append(kendalltau(pre, gt)[0])
+            pk10.append(self.cal_pk(10, pre, gt))
+            pk20.append(self.cal_pk(20, pre, gt))
+            
+            self.case_rank(i, j_list, pre, gt, nged)  # rank
+
+        time_usage = round(np.mean(time_usage), 3)
+        mse = round(np.mean(mse) * 1000, 3)
+        mae = round(np.mean(mae), 3)
+        acc = round(num_acc / num, 3)
+        fea = round(num_fea / num, 3)
+        rho = round(np.mean(rho), 3)
+        tau = round(np.mean(tau), 3)
+        pk10 = round(np.mean(pk10), 3)
+        pk20 = round(np.mean(pk20), 3)
+        
+        # 输出结果
+        self.results.append(('model_name', 'dataset', 'graph_set', '#testing_pairs', 'time_usage(s/100p)', 'mse', 'mae', 'acc',
+                             'fea', 'rho', 'tau', 'pk10', 'pk20'))
+        self.results.append((self.args.model_name, self.args.dataset, testing_graph_set, num, time_usage, mse, mae, acc,
+                             fea, rho, tau, pk10, pk20))
+        format_str = "{:<15}{:<10}{:<12}{:<18}{:<20}{:<10}{:<10}{:<10}{:<10}{:<10}{:<10}{:<10}{:<10}"
+        
+        print(format_str.format(*self.results[-2]))
+        print(format_str.format(*self.results[-1]))
+
+    def case_rank(self, i, j_list, pre_list, gt_list, nged_list):
+        """根据预测值排名
+        Args:
+            i (_type_): 测试图-1个图
+            j_list (_type_): 训练图集-100个图 
+            pre (_type_): 100个图对的预测值
+            gt (_type_): 100个图对的真实值
+        """
+        i_gid = self.gid[i]
+        rank_list = list(zip(pre_list, gt_list, nged_list, j_list))
+        rank_list.sort()  # 按预测值pre从小到大排
+        with open('rank_{}_{}.txt'.format(self.args.model_name, self.args.dataset), 'a') as f:
+            i_gid = self.gid[i]
+            for pre, gt, nged, j in rank_list:
+                # gid1, gid2, gt_ged, pre_ged
+                f.write(f"({i_gid}, {self.gid[j]}, {gt}, {pre}, {nged})\n")
+        
     def batch_score(self, testing_graph_set='test', test_k=100):
         """
         Scoring on the test set.
@@ -861,5 +991,10 @@ class Trainer(object):
                    self.args.abs_path + self.args.model_path + self.args.dataset + '_' + str(epoch))
 
     def load(self, epoch):
-        self.model.load_state_dict(
-            torch.load(self.args.abs_path + self.args.model_path + self.args.dataset + '_' + str(epoch)))
+        if self.args.model_train == 1:
+            self.model.load_state_dict(
+                torch.load(self.args.abs_path + self.args.model_path + self.args.dataset + '_' + str(epoch)))
+        else: # case study
+            print(self.args.abs_path + self.args.model_path + self.args.model_name + '/' + self.args.dataset + '_' + str(epoch))
+            self.model.load_state_dict(
+                torch.load(self.args.abs_path + self.args.model_path + self.args.model_name + '/' + self.args.dataset + '_' + str(epoch)))

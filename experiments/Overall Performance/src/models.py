@@ -25,9 +25,10 @@ class SimGNN(torch.nn.Module):
         """
         super(SimGNN, self).__init__()
         self.args = args
+        self.args.final_features = self.args.filters_3  # 16
         self.number_labels = number_of_labels
         self.setup_layers()
-
+        
     def calculate_bottleneck_features(self):
         """
         Deciding the shape of the bottleneck layer.
@@ -85,13 +86,13 @@ class SimGNN(torch.nn.Module):
         features = torch.nn.functional.dropout(features,
                                                p=self.args.dropout,
                                                training=self.training)
-
+        
         features = self.convolution_2(features, edge_index)
         features = torch.nn.functional.relu(features)
         features = torch.nn.functional.dropout(features,
                                                p=self.args.dropout,
                                                training=self.training)
-
+        
         features = self.convolution_3(features, edge_index)
         # features = torch.sigmoid(features)
         return features
@@ -531,7 +532,7 @@ class MyGNN3(torch.nn.Module):
         return mapping_ged.view(-1)
     
     def LRL(self, abstract_features_1, abstract_features_2):
-        """经过LRL和gumbel-sinkhorn得到置换矩阵
+        """经过LRL和gumbel_sinkhorn得到置换矩阵
         Args:
             abstract_features_1 (_type_): 图1节点嵌入 [n1, 32]
             abstract_features_2 (_type_): 图2节点嵌入 [n2, 32]
@@ -549,8 +550,17 @@ class MyGNN3(torch.nn.Module):
         sinkhorn_input = F.pad(sinkhorn_input, pad=(0, max_size-n2, 0, max_size-n1))  # [max_size, max_size], 左右上下
         # 虽然在上面mask掉了填充部分，但经过gumbel后，mask的部分仍会有值，需要A_match方面进行mask
         return sinkhorn_input
+
+    def simple_mul(self, abstract_features_1, abstract_features_2):
+        n1 = abstract_features_1.shape[0]
+        n2 = abstract_features_2.shape[0]
+        max_size = max(n1, n2)
+        # mul
+        sim = torch.matmul(abstract_features_1, abstract_features_2.permute(1,0))  # [n1, n2]
+        sim = F.pad(sim, pad=(0, max_size-n2, 0, max_size-n1))  # [max_size, max_size], 左右上下
+        return sim
     
-    def Cross_(self, abstract_features_1, abstract_features_2):
+    def Cross_simple(self, abstract_features_1, abstract_features_2):
         """通过嵌入计算相似度矩阵
         Args:
             abstract_features_1 (_type_): 图1嵌入 [n1, 32]
@@ -563,19 +573,11 @@ class MyGNN3(torch.nn.Module):
         n1 = abstract_features_1.shape[0]
         n2 = abstract_features_2.shape[0]
         max_size = max(n1, n2)
-        # 填充
-        abstract_features_1 = F.pad(abstract_features_1, pad=(0,0,0,max_size-n1))  # [max_size, 32]
-        abstract_features_2 = F.pad(abstract_features_2, pad=(0,0,0,max_size-n2))  # [max_size, 32]
         # 交互
         m = self.costMatrix(abstract_features_1, abstract_features_2)  # [max_size, max_size]
-        if n1 < n2:
-            # mask
-            mask = torch.cat((torch.ones(n2).repeat(n1,1), torch.zeros(n2).repeat(n2-n1,1))).to(self.device)  # [max_size, max_size]
-            return torch.mul(mask, m)
-        elif n1 == n2: 
-            return m
-        else: 
-            print("\nerror\n")
+        # 填充
+        m = F.pad(m, pad=(0,max_size-n2,0,max_size-n1))
+        return m
 
     def Cross(self, abstract_features_1, abstract_features_2):
         n1 = abstract_features_1.shape[0]
@@ -614,7 +616,8 @@ class MyGNN3(torch.nn.Module):
         # 计算节点对齐矩阵
         LRL_map_matrix = self.LRL(abstract_features_1, abstract_features_2)  # max*max
         node_alignment = gumbel_sinkhorn(LRL_map_matrix, tau=0.1)  # # max*max
-     
+        # node_alignment = self.simple_mul(abstract_features_1, abstract_features_2)  # max*max
+        
         # 计算map_matrix和bias
         # m = torch.nn.Softmax(dim=1)
         soft_matrix = node_alignment * cost_matrix

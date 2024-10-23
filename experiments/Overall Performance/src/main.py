@@ -23,9 +23,9 @@ def main():
             trainer.score('test')  # 测试
             #if not args.demo:
              #   trainer.score('test2')
-    else:
+    else:  # case study
         trainer.cur_epoch = args.model_epoch_start
-        trainer.score('test', test_k=100)
+        trainer.score_rank('test')
         # trainer.batch_score('test', test_k=100)
         """
         test_matching = True
