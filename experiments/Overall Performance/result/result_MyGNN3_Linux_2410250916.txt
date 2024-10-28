@@ -1,0 +1,300 @@
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       1                 2102.4082334041595       83.271                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.541               2.898     0.623     0.473     0.81      0.914     0.803     0.831     0.906     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       2                 2135.36367726326         39.001                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.591               2.048     0.491     0.568     0.779     0.931     0.826     0.874     0.919     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       3                 2240.2735724449158       25.611                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.561               1.459     0.41      0.632     0.816     0.937     0.837     0.889     0.923     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       4                 2244.107978582382        19.213                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.562               1.284     0.368     0.667     0.815     0.941     0.843     0.902     0.928     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       5                 2240.949007511139        15.914                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.602               0.919     0.291     0.73      0.856     0.947     0.853     0.9       0.929     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       6                 2238.449816465378        13.597                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.631               0.854     0.262     0.757     0.924     0.951     0.86      0.917     0.948     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       7                 2527.567544698715        12.082                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.563               0.675     0.215     0.799     0.887     0.954     0.865     0.922     0.953     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       8                 2366.6047837734222       10.608                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.653               0.912     0.273     0.745     0.949     0.953     0.865     0.928     0.958     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       9                 3256.657920360565        9.463                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.727               0.73      0.226     0.79      0.957     0.956     0.869     0.926     0.95      
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       10                4737.648902416229        8.623                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             1.224               0.569     0.167     0.845     0.951     0.956     0.871     0.942     0.964     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       11                4209.301197528839        7.816                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             1.179               0.478     0.153     0.857     0.911     0.959     0.875     0.942     0.969     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       12                4051.3217313289642       7.26                     
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             1.373               0.413     0.129     0.88      0.955     0.96      0.878     0.945     0.975     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       13                6273.3617124557495       6.745                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             1.485               0.406     0.122     0.888     0.957     0.96      0.879     0.944     0.979     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       14                3999.8032398223877       6.409                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.96                0.523     0.155     0.856     0.975     0.961     0.879     0.954     0.976     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       15                3545.947368144989        5.817                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.657               0.497     0.165     0.845     0.979     0.96      0.879     0.951     0.977     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       16                4041.2390356063843       5.423                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.62                0.348     0.104     0.904     0.966     0.961     0.881     0.96      0.977     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       17                2922.7946598529816       5.264                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.712               0.345     0.104     0.904     0.959     0.963     0.884     0.968     0.981     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       18                2815.245513677597        4.95                     
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.805               0.367     0.104     0.903     0.969     0.962     0.882     0.964     0.981     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       19                2918.0875129699707       4.682                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.827               0.288     0.083     0.922     0.971     0.963     0.884     0.962     0.982     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       20                2826.131322860718        4.57                     
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.803               0.315     0.09      0.917     0.976     0.963     0.885     0.967     0.983     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       21                2863.261751651764        4.339                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.749               0.32      0.084     0.922     0.956     0.963     0.883     0.968     0.981     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       22                2880.357330799103        4.258                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.83                0.299     0.077     0.929     0.957     0.963     0.883     0.966     0.985     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       23                2882.8677246570587       4.021                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.732               0.314     0.09      0.917     0.973     0.963     0.885     0.963     0.98      
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       24                2889.7083060741425       3.95                     
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.829               0.335     0.096     0.911     0.98      0.963     0.885     0.967     0.984     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       25                2868.6093516349792       3.809                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.736               0.294     0.089     0.917     0.946     0.963     0.886     0.972     0.985     
+```
+

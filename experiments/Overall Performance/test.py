@@ -28,6 +28,8 @@ def load_data():
     return matrix_pairs_loaded
 
 def load_rank_data(model, dataset):
+    if dataset == "AIDS": batch = 420
+    else: batch = 600
     with open('./rank_{}_{}.txt'.format(model, dataset), 'r') as f:  # 从文件中读取
         data_loaded = []
         gid_list = []
@@ -42,7 +44,7 @@ def load_rank_data(model, dataset):
             ged_list.append(pair[2])
             pre_list.append(pair[3])
             nged_list.append(pair[4])
-            if num % 420 == 0:
+            if num % batch == 0:
                 data_loaded.append((pair[0], gid_list, ged_list, pre_list, nged_list))
                 gid_list = []
                 ged_list = []
@@ -189,7 +191,7 @@ def draw2(g1, g2, align, num):
     plt.savefig("./pictures/{}_2.png".format(num))
 
 def draw3(g1, gid, num):
-    """绘制图
+    """绘制单个图
     Args:
         g1 (_type_): 图相关数据：节点数n，边数m，标签列表labels，边列表graph
         gid (_type_): 图id，与文件相同
@@ -229,8 +231,8 @@ def draw3(g1, gid, num):
             node_color=colors_G1, edge_color='gray', node_size=500)
     plt.savefig("./pictures/rank/AIDS/rank_{}_{}.png".format(num, gid))
 
-def draw4(g_list, gid_list, nged_list, model, dataset):
-    """绘制rank图
+def draw_aids_rank(g_list, gid_list, nged_list, model, dataset):
+    """绘制rank图, AIDS
 
     Args:
         g_list (_type_): 要绘制的图列表
@@ -270,10 +272,33 @@ def draw4(g_list, gid_list, nged_list, model, dataset):
         # 绘制节点和边
         nx.draw(g, pos, with_labels=False, 
                 ax=ax, node_color=colors, node_size=500, edge_color='black')
-        ax.set_title(titles[i], fontsize=14)
-        ax.text(0.5, -0.1, subtitles[i], fontsize=12, ha='center', transform=ax.transAxes)
+        ax.set_title(titles[i], fontsize=18)
+        ax.text(0.5, -0.1, subtitles[i], fontsize=16, ha='center', transform=ax.transAxes)
     plt.savefig("./pictures/rank/AIDS/rank_{}_{}_{}.png".format(model, dataset, gid_list[0]))
 
+def draw_linux_rank(g_list, gid_list, nged_list, model, dataset):
+    num_graphs = len(g_list)  # 图的数量
+    fig, axs = plt.subplots(1, num_graphs, figsize=(36, 5))  # 创建子图，按行排列
+    graphs = []
+    for g in g_list:
+        G = nx.Graph()
+        G.add_edges_from(g["graph"])
+        graphs.append(G)
+    titles = ['Rank by ' + model]
+    titles.extend(nged_list)
+    subtitles = ['', 1,2,3,4,5,6,41,600]
+    # 遍历每个图并绘制在相应的子图中
+    for i, g in enumerate(graphs):
+        ax = axs[i]  # 选择对应的子图
+        # 如果没有指定位置，则使用 spring 布局
+        pos = nx.spring_layout(g, seed=42)  # 固定随机种子的布局
+        # 绘制节点和边
+        nx.draw(g, pos, with_labels=False, 
+                ax=ax, node_size=500, edge_color='black')
+        ax.set_title(titles[i], fontsize=18)
+        ax.text(0.5, -0.1, subtitles[i], fontsize=16, ha='center', transform=ax.transAxes)
+    plt.savefig("./pictures/rank/Linux/rank_{}_{}_{}.png".format(model, dataset, gid_list[0]))
+    
 def cal_pk(num, pre, gt):
     """
     分别按真实值和预测值排序，并取前k个，统计前k个中有几个重合
@@ -299,41 +324,94 @@ def draw_rank(model, dataset):
      (id140,[gid1, gid2,...],[ged1, ged2, ...],[pre1, pre2,...]),],[nged1,nged2,...]
     """
     data_list = load_rank_data(model, dataset)
-    """找p10最大的测试组"""
-    p10_max = 0  # 当前最大值
-    p10_list = []  # 保存所有p10结果
-    i_list = []  # 保存最大值的索引（存在多个）
-    for i, data in enumerate(data_list):  # 找到pk值最大的测试组
-        p10 = cal_pk(6, data[2], data[3])  # 计算pk值
-        p10_list.append(p10)  # 保存，后续计算均值
-        if p10 > p10_max:
-            p10_max = p10
-            i_list = []
-            i_list.append(i)
-        elif p10 == p10_max:  # 如果相同，一并保存
-            i_list.append(i)
-    print(i_list, p10_max, round(np.mean(p10_list), 3))
-    """在p10最大的测试组里找平均ged最小的测试组"""
-    x_list = []
-    for j in i_list:
-        x = round(np.mean(data_list[j][2][:6]), 3)  # 计算平均ged
-        x_list.append((x, j, data_list[j][0]))
-    x_list.sort()  # 按平均ged从升序排序
-    print(x_list)
+    # """找p10最大的测试组"""
+    # p10_max = 0  # 当前最大值
+    # p10_list = []  # 保存所有p10结果
+    # i_list = []  # 保存最大值的索引（存在多个）
+    # for i, data in enumerate(data_list):  # 找到pk值最大的测试组
+    #     p10 = cal_pk(6, data[2], data[3])  # 计算pk值
+    #     p10_list.append(p10)  # 保存，后续计算均值
+    #     if p10 > p10_max:
+    #         p10_max = p10
+    #         i_list = []
+    #         i_list.append(i)
+    #     elif p10 == p10_max:  # 如果相同，一并保存
+    #         i_list.append(i)
+    # print(i_list, p10_max, round(np.mean(p10_list), 3))
+    # """在p10最大的测试组里找平均ged最小的测试组"""
+    # x_list = []
+    # for j in i_list:
+    #     x = round(np.mean(data_list[j][2][:6]), 3)  # 计算平均ged
+    #     x_list.append((x, j, data_list[j][0]))
+    # x_list.sort()  # 按平均ged从升序排序
+    # print(x_list)
+    # print(len(x_list))
     """绘图"""
-    j = 28  # 28/80  30/5 从x_list中选择一个
-    gid_list = [data_list[j][0]]
-    gid_list.extend([data_list[j][1][x] for x in [0,1,2,3,4,5,20,419]])
-    nged_list = []
-    nged_list.extend([data_list[j][4][x] for x in [0,1,2,3,4,5,20,419]])
-    print("需要绘制的图ID列表:\n", gid_list)
-    g_list = []
-    for k, gid in enumerate(gid_list):
-        if k == 0:
-            g = json.load(open('./json_data/AIDS/test/{}.json'.format(gid), 'r'))
-        else: g = json.load(open('./json_data/AIDS/train/{}.json'.format(gid), 'r'))
-        g_list.append(g)
-    draw4(g_list, gid_list, nged_list, model, dataset)
+    # [118, 69, 140, 193, 157]
+    # [118, 69, 140, 193, 157, 56, 92, 164, 182]
+    for x in [80]:   
+        # print(x)
+        j = x  # AIDS:28/80/30/5 从x_list[i][1]中选择一个
+        gid_list = [data_list[j][0]]
+        nged_list = []
+        if dataset == "AIDS":
+            gid_list.extend([data_list[j][1][x] for x in [0,1,2,3,4,5,20,419]])
+            nged_list.extend([data_list[j][4][x] for x in [0,1,2,3,4,5,20,419]])
+        else: 
+            gid_list.extend([data_list[j][1][x] for x in [0,1,2,3,4,5,40,599]])
+            nged_list.extend([data_list[j][4][x] for x in [0,1,2,3,4,5,40,599]])
+        print("需要绘制的图ID列表:\n", gid_list)
+        g_list = []
+        for k, gid in enumerate(gid_list):
+            if k == 0:
+                g = json.load(open('./json_data/{}/test/{}.json'.format(dataset, gid), 'r'))
+            else: g = json.load(open('./json_data/{}/train/{}.json'.format(dataset, gid), 'r'))
+            g_list.append(g)
+        if dataset == "AIDS":
+            draw_aids_rank(g_list, gid_list, nged_list, model, dataset)
+        else:
+            draw_linux_rank(g_list, gid_list, nged_list, model, dataset)
+
+def draw_ablation_bar():
+    title = ["No-gs", "No-cost"]
+    # 数据
+    datasets = ['AIDS', 'Linux']
+    values_mygnn = [0.637, 0.208]
+    values_no_gs = [0.655, 0.305]
+    # values_no_pruning = [1.491, 0.229]
+
+    # 设置柱状图的宽度和x轴位置
+    bar_width = 0.2
+    x = np.arange(len(datasets))
+    # gap = 0.3  # 每组之间的间隙
+    # x = np.arange(len(datasets)) * (bar_width * 3 + gap)
+
+    # 绘制并列柱状图
+    fig, ax = plt.subplots()
+
+    # 绘制每组柱状图
+    bars1 = ax.bar(x - bar_width, values_mygnn, width=bar_width, label='MyGNN', color='salmon')
+    bars2 = ax.bar(x, values_no_gs, width=bar_width, label='No Gumbel-sinkhorn', color='lightblue')
+    # bars3 = ax.bar(x + bar_width, values_no_pruning, width=bar_width, label='No GED Lower Bound Pruning', color='lightgreen')
+
+    # 设置标题和标签
+    ax.set_xlabel('Dataset')
+    ax.set_ylabel('GED MAE')
+    ax.set_xticks(x)
+    ax.set_xticklabels(datasets)
+    ax.set_ylim(0, 1.0)
+    ax.set_title('GED MAE Comparison')
+
+    # 添加每个柱的数值标签
+    for bars in [bars1, bars2]:
+        for bar in bars:
+            yval = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width() / 2 , yval + 0.05, f'{yval:.3f}', ha='center', va='bottom', fontsize=10)
+
+    # 显示图例
+    ax.legend()
+    plt.savefig("./pictures/ablation/ablation_{}.png".format(1))
+    
 
 def f():
     pass
@@ -341,7 +419,9 @@ def f():
 if __name__ == "__main__":
     # 在“GEDGNN/experiments/Overall Performance”目录下运行
     # load_data2()
-    draw_rank('SimGNN', 'AIDS')
+    # draw_rank('MyGNN3', 'AIDS')
+    
+    # draw_ablation_bar()
     pass
 
     

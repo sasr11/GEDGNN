@@ -403,46 +403,30 @@ class Trainer(object):
 
         """生成测试图对"""
         # 测试集140张图与随机打乱顺序的训练集前100张图
+        num_pairs = 0
         for i in range(val_num, test_num):
             if self.gn[i] <= 10:
-                if self.args.model_train == 1:
+                if self.args.model_train == 1:  # 训练时的验证，140*100
                     random.shuffle(li)
                     self.testing_graphs.append((0, i, li[:self.args.num_testing_graphs]))
-                else:
+                elif self.args.model_train == 0:  # rank实验，完整数据集140*420
                     self.testing_graphs.append((0, i, li))
+                else:  # 消融实验, 筛选两张图大小不一样的图对, 仅在AIDS和Liunx上
+                    lix = []
+                    for j in range(train_num):
+                        if self.gn[i] != self.gn[j]:
+                            lix.append(j) 
+                    self.testing_graphs.append((0, i, lix))
+                    num_pairs += len(li)
             elif dg[i] is not None:
                 k = len(dg[i])
                 self.testing_graphs.append((1, i, list(range(k))))
-        
-        # 消融实验，筛选出两张图大小不一样的图对作为新的测试集, 仅在AIDS和Liunx上
-        # num_pairs = 0
-        # for i in range(val_num, test_num):
-        #     li = []
-        #     for j in range(train_num):
-        #         if self.gn[i] != self.gn[j]:
-        #            li.append(j) 
-        #     self.testing_graphs.append((0, i, li))
-        #     num_pairs += len(li)
-                
-        # li = []  # 测试集图id列表，用于后续测试集2的生成
-        # for i in range(val_num, test_num):
-        #     if self.gn[i] <= 10:
-        #         li.append(i)
-
-        # 测试集140张图与随机打乱顺序的测试集前100张图
-        # for i in range(val_num, test_num):
-        #     if self.gn[i] <= 10:
-        #         random.shuffle(li)
-        #         self.testing2_graphs.append((0, i, li[:self.args.num_testing_graphs]))
-        #     elif dg[i] is not None:
-        #         k = len(dg[i])
-        #         self.testing2_graphs.append((1, i, list(range(k))))
 
         print("Generate {} training graph pairs.".format(len(self.training_graphs)))
         # print("Generate {} * {} val graph pairs.".format(len(self.val_graphs), self.args.num_testing_graphs))
         if self.args.model_train == 1: print("Generate {} * {} testing graph pairs.".format(len(self.testing_graphs), self.args.num_testing_graphs))
-        else: print("Generate {} * {} testing graph pairs.".format(len(self.testing_graphs), train_num))
-        # print("Generate {} * {} testing2 graph pairs.".format(len(self.testing2_graphs), self.args.num_testing_graphs))
+        elif self.args.model_train == 0: print("Generate {} * {} testing graph pairs.".format(len(self.testing_graphs), train_num))
+        else: print("Generate {} testing graph pairs.".format(num_pairs))
 
     def create_batches(self):
         """

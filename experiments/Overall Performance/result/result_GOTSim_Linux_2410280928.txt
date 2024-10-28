@@ -1,0 +1,60 @@
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+GOTSim         Linux     train       1                 3671.5933187007904       67.14                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+GOTSim         Linux     test        20000             1.021               4.275     0.75      0.431     0.688     0.887     0.792     0.721     0.843     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+GOTSim         Linux     train       2                 3192.0662984848022       43.504                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+GOTSim         Linux     test        20000             0.597               4.015     0.699     0.472     0.742     0.889     0.796     0.721     0.842     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+GOTSim         Linux     train       3                 2182.960842847824        42.286                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+GOTSim         Linux     test        20000             0.609               3.952     0.71      0.442     0.763     0.89      0.797     0.72      0.842     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+GOTSim         Linux     train       4                 2157.856582403183        42.03                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+GOTSim         Linux     test        20000             0.621               3.931     0.706     0.445     0.762     0.891     0.798     0.72      0.842     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+GOTSim         Linux     train       5                 2396.5932910442352       41.941                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+GOTSim         Linux     test        20000             1.084               3.92      0.7       0.442     0.756     0.895     0.802     0.735     0.841     
+```
+

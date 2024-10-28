@@ -23,10 +23,13 @@ def main():
             trainer.score('test')  # 测试
             #if not args.demo:
              #   trainer.score('test2')
-    else:  # case study
+    elif args.model_train == 0:  # case study
         trainer.cur_epoch = args.model_epoch_start
         trainer.score_rank('test')
         # trainer.batch_score('test', test_k=100)
+    else:
+        trainer.cur_epoch = args.model_epoch_start
+        trainer.score('test')
         """
         test_matching = True
         trainer.cur_epoch = args.model_epoch_start

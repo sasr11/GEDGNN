@@ -1,0 +1,240 @@
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+SimGNN         Linux     train       1                 1463.4829711914062       15.938                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+SimGNN         Linux     test        20000             0.731               8.042     0.86      0.364     0.661     0.882     0.762     0.702     0.829     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+SimGNN         Linux     train       2                 1426.0662245750427       9.024                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+SimGNN         Linux     test        20000             0.45                7.976     0.86      0.342     0.715     0.88      0.766     0.695     0.843     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+SimGNN         Linux     train       3                 1572.245581626892        8.728                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+SimGNN         Linux     test        20000             0.649               7.728     0.804     0.37      0.668     0.884     0.774     0.761     0.853     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+SimGNN         Linux     train       4                 1445.5724439620972       7.906                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+SimGNN         Linux     test        20000             0.5                 7.534     0.787     0.365     0.761     0.886     0.776     0.711     0.839     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+SimGNN         Linux     train       5                 1594.520206451416        7.578                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+SimGNN         Linux     test        20000             0.435               6.703     0.745     0.381     0.758     0.887     0.777     0.704     0.83      
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+SimGNN         Linux     train       6                 1468.5650172233582       6.734                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+SimGNN         Linux     test        20000             0.719               4.785     0.673     0.434     0.738     0.91      0.808     0.819     0.883     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+SimGNN         Linux     train       7                 1494.778490304947        5.639                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+SimGNN         Linux     test        20000             0.46                4.441     0.634     0.464     0.751     0.915     0.817     0.85      0.879     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+SimGNN         Linux     train       8                 1476.0914149284363       5.34                     
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+SimGNN         Linux     test        20000             0.434               4.117     0.581     0.51      0.699     0.92      0.826     0.846     0.892     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+SimGNN         Linux     train       9                 1485.2460072040558       5.131                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+SimGNN         Linux     test        20000             0.587               3.924     0.585     0.499     0.725     0.919     0.825     0.846     0.892     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+SimGNN         Linux     train       10                1492.5618183612823       5.022                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+SimGNN         Linux     test        20000             0.7                 4.14      0.592     0.489     0.725     0.92      0.825     0.87      0.89      
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+SimGNN         Linux     train       11                1504.53981924057         4.97                     
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+SimGNN         Linux     test        20000             0.457               3.624     0.583     0.49      0.699     0.921     0.828     0.862     0.878     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+SimGNN         Linux     train       12                1500.3823881149292       4.326                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+SimGNN         Linux     test        20000             0.71                3.095     0.512     0.546     0.75      0.922     0.83      0.876     0.897     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+SimGNN         Linux     train       13                1498.409217596054        3.95                     
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+SimGNN         Linux     test        20000             0.456               2.981     0.506     0.555     0.729     0.922     0.83      0.871     0.891     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+SimGNN         Linux     train       14                1467.2296750545502       3.815                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+SimGNN         Linux     test        20000             0.621               2.87      0.503     0.555     0.744     0.926     0.836     0.879     0.893     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+SimGNN         Linux     train       15                1424.8801584243774       3.776                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+SimGNN         Linux     test        20000             0.451               2.879     0.513     0.551     0.759     0.926     0.834     0.881     0.894     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+SimGNN         Linux     train       16                1476.3624279499054       3.743                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+SimGNN         Linux     test        20000             0.509               2.943     0.51      0.543     0.736     0.927     0.836     0.876     0.898     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+SimGNN         Linux     train       17                1458.9809441566467       3.701                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+SimGNN         Linux     test        20000             0.459               2.841     0.496     0.564     0.75      0.927     0.838     0.872     0.908     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+SimGNN         Linux     train       18                1485.6030917167664       3.644                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+SimGNN         Linux     test        20000             0.546               2.904     0.522     0.547     0.709     0.929     0.84      0.884     0.906     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+SimGNN         Linux     train       19                1639.7782247066498       3.618                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+SimGNN         Linux     test        20000             1.159               2.789     0.498     0.555     0.774     0.929     0.841     0.871     0.909     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+SimGNN         Linux     train       20                1624.112258195877        3.584                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+SimGNN         Linux     test        20000             0.417               2.661     0.478     0.577     0.795     0.929     0.84      0.888     0.907     
+```
+
