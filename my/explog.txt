@@ -161,30 +161,47 @@ lrl_hiddim   costMatrix-k   init_features   final_features    轮次     mae    
     0.705   0.427   0.885   0.759   0.719    2410171020
     0.637   0.459   0.901   0.781   0.759    2410180955
 
-实验60：rank实验
+实验60：rank实验，420*100
     说明：两个数据集（AIDS、Linux），两个对比模型（SimGNN、GOTSim）
-    AIDS              mse       mae       acc       fea       rho       tau       pk10      pk20
+    AIDS              mse       mae       acc       fea       rho       tau       pk10      pk20      实验模型
     MyGNN3_AIDS_25    2.12      0.639     0.455     0.722     0.903     0.78      0.619     0.695     2410180955
     SimGNN_AIDS_20    2.979     0.935     0.333     0.62      0.831     0.689     0.416     0.519     2410211731
     GOTSim_AIDS_20    3.232     0.805     0.379     0.691     0.859     0.723     0.482     0.572     2410221020
     MyGNN3_Linux_25   0.3       0.088     0.919     0.949     0.966     0.887     0.968     0.967     2410250916
+    SimGNN_Linux_20   2.661     0.478     0.577     0.795     0.929     0.84      0.888     0.907     2410261302
+    GOTSim_Linux_20   2.475     0.549     0.529     0.732     0.934     0.848     0.902     0.909     2410280928
 实验61：消融实验
     说明：测试有无增删代价对特定数据集（两张图大小不一样的图对）的效果
     AIDS         mse       mae       acc       fea       rho       tau       pk10      pk20                      
-    有增删代价    1.95      0.609     0.472     0.735     0.907     0.787     0.666     0.726
-    无增删代价
-
-
-
-
-       2  3  4  5  6  7  8  9  10   均值
-0.8    1  2  3  4  4  5  6  7  8    0.714
-0.7    1  2  2  3  4  4  5  6  7    0.611
-0.6    1  1  2  3  3  4  4  5  6    0.518
-0.5    1  1  2  2  3  3  4  4  5    0.456
-0.4    0  1  1  2  2  2  3  3  4    0.301
+    有增删代价    1.95      0.609     0.472     0.735     0.907     0.787     0.666     0.726    2410180955
+    无增删代价                                                                                   2410311248
+    无 gs                                                                                       
+    Linux        mse       mae       acc       fea       rho       tau       pk10      pk20
+    有增删代价                                                                                   2410250916
+    无增删代价                                                                                   2411011143
+    无 gs
 
 实验计划：
+1、因为停电，实验只跑了4轮，下次继续跑
+nohup python src/main.py --model-name MyGNN3 --dataset Linux --init-features 8 --model-epoch-start 4 --model-epoch-end 25 --model-train 1 > log/demo.log 2>&1 &
+
+/model_save
+    /GOTSim
+        AIDS_20   # 2410221020
+        Linux_20  # 2410280928   
+    /MyGNN3
+        AIDS_23   #            | w/o gs |
+        Linux_23  #            | w/o gs | init_features=8
+        AIDS_24   # 2410311248 | w/o cost |
+        Linux_24  #            | w/o cost | init_features=8
+        AIDS_25   # 2410180955 | baseline
+        Linux_25  # 2410250916 | baseline | init_features=8
+    /SimGNN
+        AIDS_20   # 2410211731
+        Linux_20  # 2410261302
+
+
+
 
 结论：
 1、从节点相似度矩阵A_node和边相似度矩阵A_edge中通过自己的对齐算法(不可微)得到的对齐结果M，然后A_node*M去预测GED效果会很差

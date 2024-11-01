@@ -373,55 +373,58 @@ def draw_rank(model, dataset):
             draw_linux_rank(g_list, gid_list, nged_list, model, dataset)
 
 def draw_ablation_bar():
-    title = ["No-gs", "No-cost"]
     # 数据
-    datasets = ['AIDS', 'Linux']
-    values_mygnn = [0.637, 0.208]
-    values_no_gs = [0.655, 0.305]
-    # values_no_pruning = [1.491, 0.229]
+    categories = ['AIDS', 'Linux']
+    values = {
+        'GEDGNN-matching': [1.427, 0.208],
+        'No Add/Delete Cost': [2.31, 0.305],
+        'No Gumbel-sinkhorn': [1.491, 0.229]
+    }
+    patterns = ['xxxx', '////', '']  # 花纹样式
+    bar_colors = ['salmon', 'lightgreen', 'lightblue']
+    # 设置柱宽度和组间距
+    x = np.arange(len(categories))
+    bar_width = 0.2  # 每个柱子的宽度
+    group_width = 0.7  # 每组总宽度
 
-    # 设置柱状图的宽度和x轴位置
-    bar_width = 0.2
-    x = np.arange(len(datasets))
-    # gap = 0.3  # 每组之间的间隙
-    # x = np.arange(len(datasets)) * (bar_width * 3 + gap)
+    fig, ax = plt.subplots(figsize=(8, 6))
 
-    # 绘制并列柱状图
-    fig, ax = plt.subplots()
-
-    # 绘制每组柱状图
-    bars1 = ax.bar(x - bar_width, values_mygnn, width=bar_width, label='MyGNN', color='salmon')
-    bars2 = ax.bar(x, values_no_gs, width=bar_width, label='No Gumbel-sinkhorn', color='lightblue')
-    # bars3 = ax.bar(x + bar_width, values_no_pruning, width=bar_width, label='No GED Lower Bound Pruning', color='lightgreen')
-
-    # 设置标题和标签
-    ax.set_xlabel('Dataset')
-    ax.set_ylabel('GED MAE')
-    ax.set_xticks(x)
-    ax.set_xticklabels(datasets)
-    ax.set_ylim(0, 1.0)
-    ax.set_title('GED MAE Comparison')
-
-    # 添加每个柱的数值标签
-    for bars in [bars1, bars2]:
+    # 绘制每种数据的柱状
+    for i, (label, value) in enumerate(values.items()):
+        # 计算柱子在每组中的位置
+        offset = (i - (len(values) - 1) / 2) * (group_width / len(values))  # 计算偏置
+        bars = ax.bar(x + offset, value, bar_width, label=label, color=bar_colors[i], hatch=patterns[i], alpha=0.6, edgecolor='black')
+        
+        # 在柱子顶部添加数值标签
         for bar in bars:
-            yval = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width() / 2 , yval + 0.05, f'{yval:.3f}', ha='center', va='bottom', fontsize=10)
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width() / 2, height + 0.02, height, ha='center', va='bottom', fontsize=14)
 
-    # 显示图例
-    ax.legend()
+    # 设置 x 轴和 y 轴标签及刻度
+    ax.set_xlabel('Datasets', fontsize=20, fontweight='bold', labelpad=10)
+    ax.set_ylabel('GED MAE', fontsize=20, fontweight='bold', labelpad=10)
+    ax.set_xticks(x)
+    ax.set_xticklabels(categories, fontsize=16)
+    # 设置 x 轴和 y 轴范围
+    ax.set_xlim(-0.5, len(categories) - 0.5)
+    ax.set_ylim(0, 2.5)
+
+    # 添加 y 轴网格线
+    ax.grid(axis='y', linestyle='--', alpha=0.6)
+
+    # 添加图例
+    ax.legend(title='', loc='upper right', fontsize=16, fancybox=True, framealpha=1, edgecolor='black')
+
+    plt.yticks(fontsize=16)
+    plt.tight_layout()
     plt.savefig("./pictures/ablation/ablation_{}.png".format(1))
-    
-
-def f():
-    pass
 
 if __name__ == "__main__":
     # 在“GEDGNN/experiments/Overall Performance”目录下运行
     # load_data2()
     # draw_rank('MyGNN3', 'AIDS')
     
-    # draw_ablation_bar()
+    draw_ablation_bar()
     pass
 
     

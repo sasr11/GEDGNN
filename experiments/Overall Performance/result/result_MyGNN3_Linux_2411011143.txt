@@ -1,0 +1,48 @@
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       1                 4102.889933109283        71.692                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.678               4.213     0.799     0.373     0.715     0.884     0.76      0.776     0.864     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       2                 2421.59858250618         44.42                    
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.848               3.239     0.657     0.473     0.668     0.915     0.801     0.747     0.882     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       3                 2441.9633135795593       35.892                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             0.74                2.855     0.64      0.457     0.587     0.928     0.822     0.84      0.921     
+```
+
+## Training
+```
+model_name     dataset   graph_set   current_epoch     training_time(s/epoch)   training_loss(1000x)     
+MyGNN3         Linux     train       4                 3487.1969833374023       30.285                   
+```
+
+## Testing
+```
+model_name     dataset   graph_set   #testing_pairs    time_usage(s/100p)  mse       mae       acc       fea       rho       tau       pk10      pk20      
+MyGNN3         Linux     test        20000             1.7                 1.863     0.46      0.588     0.831     0.938     0.838     0.891     0.929     
+```
+

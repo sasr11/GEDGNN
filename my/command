@@ -24,7 +24,6 @@ python src/main.py --model-name Readout --readout max --model-epoch-start 0 --mo
 python src/main.py --model-name Readout --readout max --dataset Linux --model-epoch-start 0 --model-epoch-end 15 --model-train 1
 python src/main.py --model-name Readout --readout max --dataset IMDB --model-epoch-start 0 --model-epoch-end 15 --model-train 1
 
-nohup python src/main.py --model-name MyGNN3 --dataset Linux --model-epoch-start 0 --model-epoch-end 25 --model-train 1 > log/demo.log 2>&1 &
 nohup python src/main.py --model-name Readout --readout mean --dataset IMDB --model-epoch-start 0 --model-epoch-end 10 --model-train 1 > log/demo.log 2>&1 &
 nohup python src/main.py --model-name Readout --readout max --dataset Linux --model-epoch-start 0 --model-epoch-end 10 --model-train 1 > log/demo1.log 2>&1 &
 
@@ -43,6 +42,5 @@ python src/main.py --model-name GOTSim --model-epoch-start 20 --model-train 0
 python src/main.py --model-name MyGNN3 --model-epoch-start 25 --model-train 2    # 有增删代价
 python src/main.py --model-name MyGNN3 --model-epoch-start 24 --model-train 2    # 无增删代价
 
-1174395
-1940014
+3743395
 

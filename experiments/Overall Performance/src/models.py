@@ -611,7 +611,8 @@ class MyGNN3(torch.nn.Module):
         abstract_features_2 = self.convolutional_pass_2(edge_index_2, features_2)  # [n2, 224]
         
         # 计算节点成本矩阵
-        cost_matrix = self.Cross(abstract_features_1, abstract_features_2)  # max*max mask (max-n)*(max-m)
+        # cost_matrix = self.Cross(abstract_features_1, abstract_features_2)  # max*max mask (max-n)*(max-m)
+        cost_matrix = self.Cross_simple(abstract_features_1, abstract_features_2)  # max*max mask (max-n)*(max-m)
         
         # 计算节点对齐矩阵
         LRL_map_matrix = self.LRL(abstract_features_1, abstract_features_2)  # max*max
